@@ -1,0 +1,8 @@
+{
+    "name": "disruptor-d",
+    "description": "D port of the LMAX Disruptor",
+    "license": "Apache-2.0",
+    "authors": ["LMAX Disruptor Development Team"],
+    "targetType": "library",
+    "sourcePaths": ["source"]
+}
