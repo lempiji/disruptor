@@ -6,3 +6,4 @@ public import disruptor.sequencegroup;
 public import disruptor.fixedsequencegroup;
 public import disruptor.sequencer;
 public import disruptor.waitstrategy;
+public import disruptor.util;

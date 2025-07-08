@@ -4,18 +4,8 @@ import core.atomic;
 import core.internal.atomic : atomicLoad;
 import disruptor.sequence;
 import disruptor.sequencer : Cursored;
+import disruptor.util : getMinimumSequence;
 
-long getMinimumSequence(shared const(Sequence)[] sequences, long minimum = long.max) @nogc nothrow
-{
-    auto min = minimum;
-    foreach (s; sequences)
-    {
-        auto value = s.get();
-        if (value < min)
-            min = value;
-    }
-    return min;
-}
 
 private int countMatching(shared const(Sequence)[] values, shared const(Sequence) toMatch) @nogc nothrow
 {
