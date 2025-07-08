@@ -45,8 +45,8 @@ class BlockingWaitStrategy : WaitStrategy
     override void signalAllWhenBlocking()
     {
         _mutex.lock();
+        scope(exit) _mutex.unlock();
         _cond.notifyAll();
-        _mutex.unlock();
     }
 }
 
