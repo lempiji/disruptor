@@ -12,3 +12,4 @@ function unstash {
 trap unstash EXIT
 
 ./gradlew check test -q
+dub test -q

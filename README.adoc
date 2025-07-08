@@ -24,3 +24,11 @@ LMAX Development Team
 * https://github.com/LMAX-Exchange/disruptor/wiki/Frequently-Asked-Questions[FAQ]
 
 
+
+== Environment Prerequisites
+
+To build and test the project locally you will need:
+
+* A D compiler such as `dmd` or `ldc` along with `dub`
+* Java 11 or newer
+* Gradle (the wrapper `./gradlew` is provided)

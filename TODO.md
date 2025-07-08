@@ -29,3 +29,6 @@ The Java sources under `src/main/java/com/lmax/disruptor` form the reference imp
 - [ ] Translate the modules listed above to D, starting with the ring buffer and sequencing logic.
 - [ ] Write D unit tests mirroring the Java tests in `src/test/java`.
 - [ ] Configure GitHub Actions to run `dub test` for the D build.
+- [ ] Update `.githooks/pre-commit` to run `dub test` in addition to Gradle checks.
+- [ ] Document required tools: a D compiler with `dub`, Java and Gradle.
+- [ ] Add a simple D example showing how to use the port.
