@@ -67,3 +67,7 @@ unittest
     assert(result == 0);
     t.join();
 }
+
+public import disruptor.blockingwaitstrategy;
+public import disruptor.sleepingwaitstrategy;
+public import disruptor.yieldingwaitstrategy;
