@@ -147,3 +147,57 @@ unittest
     assert(group.remove(seq1));
     assert(group.size == 1);
 }
+
+unittest
+{
+    // A new group should report no sequences and a maximum cursor value.
+    auto group = new shared SequenceGroup();
+    assert(group.size == 0);
+    assert(group.get == long.max);
+}
+
+unittest
+{
+    // Verify adding and removing sequences updates state correctly.
+    auto group = new shared SequenceGroup();
+    auto seq1 = new shared Sequence();
+    auto seq2 = new shared Sequence();
+    group.add(seq1);
+    group.add(seq2);
+    assert(group.size == 2);
+    assert(group.get == Sequence.INITIAL_VALUE);
+    seq1.set(3);
+    seq2.set(7);
+    assert(group.get == 3);
+    assert(group.remove(seq1));
+    assert(!group.remove(seq1));
+    assert(group.size == 1);
+}
+
+unittest
+{
+    // addWhileRunning should set new sequences to the cursor value at the time
+    // they are added.
+    class StubCursor : Cursored
+    {
+        long cursor = 0;
+        override long getCursor() { return cursor; }
+        void advance(long value) { cursor += value; }
+    }
+
+    auto cursor = new StubCursor();
+    auto group = new shared SequenceGroup();
+
+    cursor.advance(5);
+    auto seq1 = new shared Sequence();
+    group.addWhileRunning(cursor, seq1);
+    assert(seq1.get == 5);
+
+    cursor.advance(3);
+    auto seq2 = new shared Sequence();
+    group.addWhileRunning(cursor, seq2);
+    assert(seq2.get == 8);
+
+    assert(group.size == 2);
+    assert(group.get == 5);
+}
