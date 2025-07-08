@@ -4,3 +4,4 @@ module disruptor;
 public import disruptor.sequence;
 public import disruptor.sequencegroup;
 public import disruptor.sequencer;
+public import disruptor.waitstrategy;
