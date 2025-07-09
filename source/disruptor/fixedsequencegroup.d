@@ -1,7 +1,7 @@
 module disruptor.fixedsequencegroup;
 
 import disruptor.sequence : Sequence;
-import disruptor.sequencegroup : getMinimumSequence;
+import disruptor.util : getMinimumSequence;
 
 /// Hides a group of Sequences behind a single Sequence.
 final class FixedSequenceGroup : Sequence
