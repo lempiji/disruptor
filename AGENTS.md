@@ -17,6 +17,8 @@
    ```
    The build step creates the library, while `dub test` executes the D unit tests.
 
+- For detailed coding conventions, see [CODING_GUIDELINES.md](./CODING_GUIDELINES.md).
+
 ### Recommended Tools
 
 - Java 11 or newer. The bundled Gradle wrapper will download an appropriate JDK if needed.
