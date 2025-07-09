@@ -3,11 +3,14 @@ module disruptor.util;
 import core.time : MonoTime, nsecs;
 import core.thread : Thread;
 import core.bitop : bsr;
+import core.sync.condition : Condition;
 import disruptor.sequence : Sequence;
 
 /// Calculate the next power of two greater than or equal to x.
-int ceilingNextPowerOfTwo(int x) @nogc nothrow
+int ceilingNextPowerOfTwo(int x)
 {
+    if (x < 1)
+        throw new Exception("x must be a positive number");
     x -= 1;
     x |= x >> 1;
     x |= x >> 2;
@@ -55,10 +58,14 @@ int log2(int value)
 }
 
 /// Wait on the calling thread for approximately the given nanoseconds.
-long awaitNanos(Object mutex, long timeoutNanos)
+long awaitNanos(Condition cond, long timeoutNanos)
 {
     auto start = MonoTime.currTime;
-    Thread.sleep(nsecs(timeoutNanos));
+    auto mtx = cond.mutex;
+    mtx.lock();
+    scope (exit)
+        mtx.unlock();
+    cond.wait(nsecs(timeoutNanos));
     auto waited = MonoTime.currTime - start;
     return timeoutNanos - cast(long) waited.total!"nsecs";
 }
@@ -69,6 +76,8 @@ unittest
 
     assert(ceilingNextPowerOfTwo(1000) == 1024);
     assert(ceilingNextPowerOfTwo(1024) == 1024);
+    assertThrown!Exception(ceilingNextPowerOfTwo(0));
+    assertThrown!Exception(ceilingNextPowerOfTwo(-1));
 
     auto seq1 = new shared Sequence(7);
     auto seq2 = new shared Sequence(3);
