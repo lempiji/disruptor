@@ -50,20 +50,20 @@ unittest
         override void checkAlert() shared {}
     }
 
-    auto strategy = new BusySpinWaitStrategy();
+    auto strategy = new shared BusySpinWaitStrategy();
     auto cursor = new shared Sequence(0); // unused by strategy
     auto dependent = new shared Sequence(); // starts at INITIAL_VALUE (-1)
-    auto barrier = new DummySequenceBarrier();
+    auto barrier = new shared DummySequenceBarrier();
 
     auto t = new Thread({
         Thread.sleep(50.msecs);
         dependent.incrementAndGet();
-        (cast(shared BusySpinWaitStrategy)strategy).signalAllWhenBlocking();
+        strategy.signalAllWhenBlocking();
     });
     t.start();
 
     // Wait for sequence 0
-    auto result = (cast(shared BusySpinWaitStrategy)strategy).waitFor(0, cursor, dependent, cast(shared SequenceBarrier)barrier);
+    auto result = strategy.waitFor(0, cursor, dependent, barrier);
     assert(result == 0);
     t.join();
 }

@@ -166,26 +166,27 @@ unittest
 
 unittest
 {
+    import core.atomic : atomicOp;
     // addWhileRunning should set new sequences to the cursor value at the time
     // they are added.
     class StubCursor : Cursored
     {
         long cursor = 0;
         override long getCursor() shared { return cursor; }
-        void advance(long value) { cursor += value; }
+        void advance(long value) shared { atomicOp!("+=")(cursor, value); }
     }
 
-    auto cursor = new StubCursor();
+    auto cursor = new shared StubCursor();
     auto group = new shared SequenceGroup();
 
     cursor.advance(5);
     auto seq1 = new shared Sequence();
-    group.addWhileRunning(cast(shared Cursored)cursor, seq1);
+    group.addWhileRunning(cursor, seq1);
     assert(seq1.get == 5);
 
     cursor.advance(3);
     auto seq2 = new shared Sequence();
-    group.addWhileRunning(cast(shared Cursored)cursor, seq2);
+    group.addWhileRunning(cursor, seq2);
     assert(seq2.get == 8);
 
     assert(group.size == 2);

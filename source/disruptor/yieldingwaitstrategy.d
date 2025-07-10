@@ -57,19 +57,19 @@ unittest
         override void checkAlert() shared {}
     }
 
-    auto strategy = new YieldingWaitStrategy();
+    auto strategy = new shared YieldingWaitStrategy();
     auto cursor = new shared Sequence(0);
     auto dependent = new shared Sequence();
-    auto barrier = new DummySequenceBarrier();
+    auto barrier = new shared DummySequenceBarrier();
 
     auto t = new Thread({
         Thread.sleep(50.msecs);
         dependent.incrementAndGet();
-        (cast(shared YieldingWaitStrategy)strategy).signalAllWhenBlocking();
+        strategy.signalAllWhenBlocking();
     });
     t.start();
 
-    auto result = (cast(shared YieldingWaitStrategy)strategy).waitFor(0, cursor, dependent, cast(shared SequenceBarrier)barrier);
+    auto result = strategy.waitFor(0, cursor, dependent, barrier);
     assert(result == 0);
     t.join();
 }
