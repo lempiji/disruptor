@@ -20,7 +20,7 @@ class BlockingWaitStrategy : WaitStrategy
         _cond = new Condition(_mutex);
     }
 
-    override long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, SequenceBarrier barrier)
+    override long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, shared SequenceBarrier barrier) shared
     {
         long availableSequence;
         if (cursor.get() < sequence)
@@ -42,7 +42,7 @@ class BlockingWaitStrategy : WaitStrategy
         return availableSequence;
     }
 
-    override void signalAllWhenBlocking()
+    override void signalAllWhenBlocking() shared
     {
         _mutex.lock();
         scope(exit) _mutex.unlock();
@@ -57,12 +57,12 @@ unittest
 
     class DummySequenceBarrier : SequenceBarrier
     {
-        override long waitFor(long sequence) { return 0; }
-        override long getCursor() { return 0; }
-        override bool isAlerted() { return false; }
-        override void alert() {}
-        override void clearAlert() {}
-        override void checkAlert() {}
+        override long waitFor(long sequence) shared { return 0; }
+        override long getCursor() shared { return 0; }
+        override bool isAlerted() shared { return false; }
+        override void alert() shared {}
+        override void clearAlert() shared {}
+        override void checkAlert() shared {}
     }
 
     auto strategy = new BlockingWaitStrategy();
@@ -73,11 +73,11 @@ unittest
     auto t = new Thread({
         Thread.sleep(50.msecs);
         dependent.incrementAndGet();
-        strategy.signalAllWhenBlocking();
+        (cast(shared BlockingWaitStrategy)strategy).signalAllWhenBlocking();
     });
     t.start();
 
-    auto result = strategy.waitFor(0, cursor, dependent, barrier);
+    auto result = (cast(shared BlockingWaitStrategy)strategy).waitFor(0, cursor, dependent, cast(shared SequenceBarrier)barrier);
     assert(result == 0);
     t.join();
 }

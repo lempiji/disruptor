@@ -42,7 +42,7 @@ public:
         }
     }
 
-    override long waitFor(long sequence)
+    override long waitFor(long sequence) shared
     {
         checkAlert();
 
@@ -54,31 +54,31 @@ public:
             return availableSequence;
         }
 
-        return _sequencer.getHighestPublishedSequence(sequence, availableSequence);
+        return (cast(Sequencer)_sequencer).getHighestPublishedSequence(sequence, availableSequence);
     }
 
-    override long getCursor()
+    override long getCursor() shared
     {
         return _dependentSequence.get();
     }
 
-    override bool isAlerted()
+    override bool isAlerted() shared
     {
         return _alerted;
     }
 
-    override void alert()
+    override void alert() shared
     {
         _alerted = true;
         _waitStrategy.signalAllWhenBlocking();
     }
 
-    override void clearAlert()
+    override void clearAlert() shared
     {
         _alerted = false;
     }
 
-    override void checkAlert()
+    override void checkAlert() shared
     {
         if (_alerted)
         {
@@ -126,7 +126,7 @@ unittest
     auto dep2 = new shared Sequence(9);
     auto dep3 = new shared Sequence(10);
 
-    auto barrier = new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [dep1, dep2, dep3]);
+    auto barrier = cast(shared) new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [dep1, dep2, dep3]);
     auto result = barrier.waitFor(9);
     assert(result >= 9);
 
@@ -140,7 +140,7 @@ unittest
     // alert behaviour during wait
     bool caught = false;
     auto dep4 = new shared Sequence(0);
-    auto barrier2 = new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [dep4]);
+    auto barrier2 = cast(shared) new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [dep4]);
     auto t = new Thread({
         try { barrier2.waitFor(1); } catch(Exception e) { caught = true; }
     });
@@ -154,7 +154,7 @@ unittest
     auto worker1 = new shared Sequence(8);
     auto worker2 = new shared Sequence(8);
     auto worker3 = new shared Sequence(8);
-    auto barrier3 = new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [worker1, worker2, worker3]);
+    auto barrier3 = cast(shared) new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [worker1, worker2, worker3]);
     auto thread = new Thread({
         Thread.sleep(20.msecs);
         foreach (ref seq; [worker1, worker2, worker3])

@@ -8,16 +8,16 @@ import disruptor.sequencer : SequenceBarrier;
 interface WaitStrategy
 {
     /// Wait for the given sequence to be available.
-    long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, SequenceBarrier barrier);
+    long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, shared SequenceBarrier barrier) shared;
 
     /// Signal waiting processors that the cursor has advanced.
-    void signalAllWhenBlocking();
+    void signalAllWhenBlocking() shared;
 }
 
 /// Busy spin strategy that repeatedly checks the dependent sequence.
 class BusySpinWaitStrategy : WaitStrategy
 {
-    override long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, SequenceBarrier barrier)
+    override long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, shared SequenceBarrier barrier) shared
     {
         long available;
         while ((available = dependentSequence.get()) < sequence)
@@ -28,7 +28,7 @@ class BusySpinWaitStrategy : WaitStrategy
         return available;
     }
 
-    override void signalAllWhenBlocking()
+    override void signalAllWhenBlocking() shared
     {
         // no-op for busy spin
     }
@@ -42,12 +42,12 @@ unittest
     // simple barrier implementation
     class DummySequenceBarrier : SequenceBarrier
     {
-        override long waitFor(long sequence) { return 0; }
-        override long getCursor() { return 0; }
-        override bool isAlerted() { return false; }
-        override void alert() {}
-        override void clearAlert() {}
-        override void checkAlert() {}
+        override long waitFor(long sequence) shared { return 0; }
+        override long getCursor() shared { return 0; }
+        override bool isAlerted() shared { return false; }
+        override void alert() shared {}
+        override void clearAlert() shared {}
+        override void checkAlert() shared {}
     }
 
     auto strategy = new BusySpinWaitStrategy();
@@ -58,12 +58,12 @@ unittest
     auto t = new Thread({
         Thread.sleep(50.msecs);
         dependent.incrementAndGet();
-        strategy.signalAllWhenBlocking();
+        (cast(shared BusySpinWaitStrategy)strategy).signalAllWhenBlocking();
     });
     t.start();
 
     // Wait for sequence 0
-    auto result = strategy.waitFor(0, cursor, dependent, barrier);
+    auto result = (cast(shared BusySpinWaitStrategy)strategy).waitFor(0, cursor, dependent, cast(shared SequenceBarrier)barrier);
     assert(result == 0);
     t.join();
 }

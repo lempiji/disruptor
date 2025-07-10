@@ -22,12 +22,12 @@ interface Sequenced
 
 interface SequenceBarrier
 {
-    long waitFor(long sequence);
-    long getCursor();
-    bool isAlerted();
-    void alert();
-    void clearAlert();
-    void checkAlert();
+    long waitFor(long sequence) shared;
+    long getCursor() shared;
+    bool isAlerted() shared;
+    void alert() shared;
+    void clearAlert() shared;
+    void checkAlert() shared;
 }
 
 interface DataProvider(T)

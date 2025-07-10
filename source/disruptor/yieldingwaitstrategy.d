@@ -10,7 +10,7 @@ class YieldingWaitStrategy : WaitStrategy
 {
     enum int SPIN_TRIES = 100;
 
-    override long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, SequenceBarrier barrier)
+    override long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, shared SequenceBarrier barrier) shared
     {
         long availableSequence;
         int counter = SPIN_TRIES;
@@ -21,12 +21,12 @@ class YieldingWaitStrategy : WaitStrategy
         return availableSequence;
     }
 
-    override void signalAllWhenBlocking()
+    override void signalAllWhenBlocking() shared
     {
     }
 
 private:
-    int applyWaitMethod(SequenceBarrier barrier, int counter)
+    int applyWaitMethod(shared SequenceBarrier barrier, int counter) shared
     {
         barrier.checkAlert();
 
@@ -49,12 +49,12 @@ unittest
 
     class DummySequenceBarrier : SequenceBarrier
     {
-        override long waitFor(long sequence) { return 0; }
-        override long getCursor() { return 0; }
-        override bool isAlerted() { return false; }
-        override void alert() {}
-        override void clearAlert() {}
-        override void checkAlert() {}
+        override long waitFor(long sequence) shared { return 0; }
+        override long getCursor() shared { return 0; }
+        override bool isAlerted() shared { return false; }
+        override void alert() shared {}
+        override void clearAlert() shared {}
+        override void checkAlert() shared {}
     }
 
     auto strategy = new YieldingWaitStrategy();
@@ -65,11 +65,11 @@ unittest
     auto t = new Thread({
         Thread.sleep(50.msecs);
         dependent.incrementAndGet();
-        strategy.signalAllWhenBlocking();
+        (cast(shared YieldingWaitStrategy)strategy).signalAllWhenBlocking();
     });
     t.start();
 
-    auto result = strategy.waitFor(0, cursor, dependent, barrier);
+    auto result = (cast(shared YieldingWaitStrategy)strategy).waitFor(0, cursor, dependent, cast(shared SequenceBarrier)barrier);
     assert(result == 0);
     t.join();
 }
