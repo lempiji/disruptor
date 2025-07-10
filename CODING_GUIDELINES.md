@@ -9,5 +9,6 @@ This repository includes a D port of the Disruptor. When migrating Java code to 
 - **Organize imports** – group all `public import` statements together at the start of each file.
 - **Use selective imports** – prefer `import module : symbol;` to remove unnecessary imports.
 - **Apply attributes** – mark functions and variables with attributes such as `shared`, `nothrow`, `@safe`, `in`, and others where appropriate.
+- **Use `shared` consistently** – declare methods that operate on shared instances with `shared` (e.g., `long get() const shared`). Parameters and local variables referencing shared objects should use the `shared` type qualifier (e.g., `shared Sequence[]`). Initialize shared objects with `new shared Type(...)`. See `sequence.d`, `sequencegroup.d`, and `processingsequencebarrier.d` for examples.
 
 Following these practices will help maintain clarity and quality as the code base evolves.
