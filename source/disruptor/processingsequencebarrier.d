@@ -4,6 +4,7 @@ import disruptor.sequence : Sequence;
 import disruptor.fixedsequencegroup : FixedSequenceGroup;
 import disruptor.waitstrategy : WaitStrategy;
 import disruptor.sequencer : Sequencer, SequenceBarrier, DataProvider, EventPoller;
+import core.atomic;
 
 /// Exception thrown when a SequenceBarrier is alerted.
 class AlertException : Exception
@@ -22,7 +23,7 @@ private:
     WaitStrategy _waitStrategy;
     shared Sequence _cursorSequence;
     shared Sequence _dependentSequence;
-    bool _alerted = false;
+    shared bool _alerted = false;
 
 public:
     this(Sequencer sequencer, WaitStrategy waitStrategy,
@@ -64,23 +65,47 @@ public:
 
     override bool isAlerted()
     {
-        return _alerted;
+        return atomicLoad!(MemoryOrder.acq)(_alerted);
+    }
+
+    bool isAlerted() shared
+    {
+        return atomicLoad!(MemoryOrder.acq)(_alerted);
     }
 
     override void alert()
     {
-        _alerted = true;
+        atomicStore!(MemoryOrder.rel)(_alerted, true);
         _waitStrategy.signalAllWhenBlocking();
+    }
+
+    void alert() shared
+    {
+        atomicStore!(MemoryOrder.rel)(_alerted, true);
+        (cast(WaitStrategy)_waitStrategy).signalAllWhenBlocking();
     }
 
     override void clearAlert()
     {
-        _alerted = false;
+        atomicStore!(MemoryOrder.rel)(_alerted, false);
+    }
+
+    void clearAlert() shared
+    {
+        atomicStore!(MemoryOrder.rel)(_alerted, false);
     }
 
     override void checkAlert()
     {
-        if (_alerted)
+        if (atomicLoad!(MemoryOrder.acq)(_alerted))
+        {
+            throw new AlertException();
+        }
+    }
+
+    void checkAlert() shared
+    {
+        if (atomicLoad!(MemoryOrder.acq)(_alerted))
         {
             throw new AlertException();
         }
