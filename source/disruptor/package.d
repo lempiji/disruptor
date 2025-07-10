@@ -9,3 +9,5 @@ public import disruptor.sequencer;
 public import disruptor.processingsequencebarrier;
 public import disruptor.waitstrategy;
 public import disruptor.util;
+public import disruptor.insufficientcapacityexception;
+public import disruptor.multiproducersequencer;
