@@ -19,13 +19,13 @@ class ProcessingSequenceBarrier : SequenceBarrier
 {
 private:
     Sequencer _sequencer;
-    WaitStrategy _waitStrategy;
+    shared WaitStrategy _waitStrategy;
     shared Sequence _cursorSequence;
     shared Sequence _dependentSequence;
     bool _alerted = false;
 
 public:
-    this(Sequencer sequencer, WaitStrategy waitStrategy,
+    this(Sequencer sequencer, shared WaitStrategy waitStrategy,
             shared Sequence cursorSequence, shared Sequence[] dependentSequences = [])
     {
         this._sequencer = sequencer;
@@ -120,7 +120,7 @@ unittest
 
     auto cursor = new shared Sequence(10);
     auto sequencer = new DummySequencer(cursor);
-    auto waitStrategy = new BusySpinWaitStrategy();
+    auto waitStrategy = new shared BusySpinWaitStrategy();
 
     auto dep1 = new shared Sequence(10);
     auto dep2 = new shared Sequence(9);
