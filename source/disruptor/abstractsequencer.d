@@ -42,16 +42,15 @@ public:
     }
 
     /// Add gating sequences to be tracked by this sequencer.
-    override void addGatingSequences(Sequence[] sequencesToAdd...)
+    override void addGatingSequences(shared Sequence[] sequencesToAdd...)
     {
-        auto sharedSeqs = cast(shared Sequence[]) sequencesToAdd;
-        addSequences(&gatingSequences, cast(Cursored)this, sharedSeqs);
+        addSequences(&gatingSequences, cast(Cursored)this, sequencesToAdd);
     }
 
     /// Remove a gating sequence.
-    override bool removeGatingSequence(Sequence sequence)
+    override bool removeGatingSequence(shared Sequence sequence)
     {
-        return removeSequence(&gatingSequences, cast(shared Sequence) sequence);
+        return removeSequence(&gatingSequences, sequence);
     }
 
     /// Get the minimum sequence seen by gating sequences.
@@ -61,10 +60,9 @@ public:
     }
 
     /// Create a new sequence barrier tracking the given sequences.
-    override SequenceBarrier newBarrier(Sequence[] sequencesToTrack...)
+    override SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...)
     {
-        auto sharedSeqs = cast(shared Sequence[]) sequencesToTrack;
-        return new ProcessingSequenceBarrier(this, waitStrategy, cursor, sharedSeqs);
+        return new ProcessingSequenceBarrier(this, waitStrategy, cursor, sequencesToTrack);
     }
 
     // Abstract methods to be provided by subclasses.
@@ -79,7 +77,7 @@ public:
     abstract override void publish(long sequence);
     abstract override void publish(long lo, long hi);
     abstract override long getHighestPublishedSequence(long nextSequence, long availableSequence);
-    EventPoller!T newPoller(T)(DataProvider!T provider, Sequence[] gatingSequences...)
+    EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...)
     {
         return null;
     }
@@ -113,7 +111,7 @@ unittest
         override void publish(long sequence) {}
         override void publish(long lo, long hi) {}
         override long getHighestPublishedSequence(long nextSequence, long availableSequence) { return availableSequence; }
-        EventPoller!T newPoller(T)(DataProvider!T provider, Sequence[] gatingSequences...) { return null; }
+        EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...) { return null; }
     }
 
     auto strategy = new SleepingWaitStrategy();
@@ -122,7 +120,7 @@ unittest
     auto g1 = new shared Sequence();
     auto g2 = new shared Sequence();
 
-    seq.addGatingSequences(cast(Sequence) g1, cast(Sequence) g2);
+    seq.addGatingSequences(g1, g2);
     assert(g1.get == seq.getCursor());
     assert(g2.get == seq.getCursor());
 
@@ -135,7 +133,7 @@ unittest
     g2.set(7);
     assert(seq.getMinimumSequence() == 5);
 
-    assert(seq.removeGatingSequence(cast(Sequence) g1));
-    assert(!seq.removeGatingSequence(cast(Sequence) g1));
+    assert(seq.removeGatingSequence(g1));
+    assert(!seq.removeGatingSequence(g1));
     assert(seq.getMinimumSequence() == 7);
 }
