@@ -1,0 +1,141 @@
+module disruptor.abstractsequencer;
+
+import disruptor.sequence : Sequence;
+import disruptor.waitstrategy : WaitStrategy;
+import disruptor.sequencer : Sequencer, SequenceBarrier, Cursored, DataProvider, EventPoller;
+import disruptor.sequencegroup : addSequences, removeSequence;
+import disruptor.processingsequencebarrier : ProcessingSequenceBarrier;
+import disruptor.util : utilGetMinimumSequence = getMinimumSequence;
+
+/// Base class providing common sequencer functionality.
+abstract class AbstractSequencer : Sequencer
+{
+protected:
+    int bufferSize;
+    WaitStrategy waitStrategy;
+    shared Sequence cursor;
+    align(16) shared Sequence[] gatingSequences = [];
+
+public:
+    this(int bufferSize, WaitStrategy waitStrategy)
+    {
+        if (bufferSize < 1)
+            throw new Exception("bufferSize must not be less than 1");
+        if ((bufferSize & (bufferSize - 1)) != 0)
+            throw new Exception("bufferSize must be a power of 2");
+
+        this.bufferSize = bufferSize;
+        this.waitStrategy = waitStrategy;
+        this.cursor = new shared Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    }
+
+    /// Return the current cursor value.
+    override long getCursor() @nogc nothrow
+    {
+        return cursor.get();
+    }
+
+    /// Return the ring buffer size.
+    override int getBufferSize() @nogc nothrow
+    {
+        return bufferSize;
+    }
+
+    /// Add gating sequences to be tracked by this sequencer.
+    override void addGatingSequences(Sequence[] sequencesToAdd...)
+    {
+        auto sharedSeqs = cast(shared Sequence[]) sequencesToAdd;
+        addSequences(&gatingSequences, cast(Cursored)this, sharedSeqs);
+    }
+
+    /// Remove a gating sequence.
+    override bool removeGatingSequence(Sequence sequence)
+    {
+        return removeSequence(&gatingSequences, cast(shared Sequence) sequence);
+    }
+
+    /// Get the minimum sequence seen by gating sequences.
+    override long getMinimumSequence() @nogc nothrow
+    {
+        return utilGetMinimumSequence(cast(shared const Sequence[]) gatingSequences, cursor.get());
+    }
+
+    /// Create a new sequence barrier tracking the given sequences.
+    override SequenceBarrier newBarrier(Sequence[] sequencesToTrack...)
+    {
+        auto sharedSeqs = cast(shared Sequence[]) sequencesToTrack;
+        return new ProcessingSequenceBarrier(this, waitStrategy, cursor, sharedSeqs);
+    }
+
+    // Abstract methods to be provided by subclasses.
+    abstract override void claim(long sequence);
+    abstract override bool isAvailable(long sequence);
+    abstract override bool hasAvailableCapacity(int requiredCapacity);
+    abstract override long remainingCapacity();
+    abstract override long next();
+    abstract override long next(int n);
+    abstract override long tryNext();
+    abstract override long tryNext(int n);
+    abstract override void publish(long sequence);
+    abstract override void publish(long lo, long hi);
+    abstract override long getHighestPublishedSequence(long nextSequence, long availableSequence);
+    EventPoller!T newPoller(T)(DataProvider!T provider, Sequence[] gatingSequences...)
+    {
+        return null;
+    }
+}
+
+unittest
+{
+    import disruptor.sleepingwaitstrategy : SleepingWaitStrategy;
+
+    // Minimal implementation for testing.
+    class DummySequencer : AbstractSequencer
+    {
+        this(int size, WaitStrategy strategy)
+        {
+            super(size, strategy);
+        }
+
+        void setCursor(long value)
+        {
+            cursor.set(value);
+        }
+
+        override void claim(long sequence) {}
+        override bool isAvailable(long sequence) { return true; }
+        override bool hasAvailableCapacity(int requiredCapacity) { return true; }
+        override long remainingCapacity() { return 0; }
+        override long next() { return 0; }
+        override long next(int n) { return 0; }
+        override long tryNext() { return 0; }
+        override long tryNext(int n) { return 0; }
+        override void publish(long sequence) {}
+        override void publish(long lo, long hi) {}
+        override long getHighestPublishedSequence(long nextSequence, long availableSequence) { return availableSequence; }
+        EventPoller!T newPoller(T)(DataProvider!T provider, Sequence[] gatingSequences...) { return null; }
+    }
+
+    auto strategy = new SleepingWaitStrategy();
+    auto seq = new DummySequencer(8, strategy);
+
+    auto g1 = new shared Sequence();
+    auto g2 = new shared Sequence();
+
+    seq.addGatingSequences(cast(Sequence) g1, cast(Sequence) g2);
+    assert(g1.get == seq.getCursor());
+    assert(g2.get == seq.getCursor());
+
+    seq.setCursor(7);
+
+    // Both gating sequences at initial value -> minimum equals initial value
+    assert(seq.getMinimumSequence() == Sequence.INITIAL_VALUE);
+
+    g1.set(5);
+    g2.set(7);
+    assert(seq.getMinimumSequence() == 5);
+
+    assert(seq.removeGatingSequence(cast(Sequence) g1));
+    assert(!seq.removeGatingSequence(cast(Sequence) g1));
+    assert(seq.getMinimumSequence() == 7);
+}
