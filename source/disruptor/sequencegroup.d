@@ -18,7 +18,7 @@ private int countMatching(shared const(Sequence)[] values, shared const(Sequence
     return count;
 }
 
-void addSequences(shared Sequence[]* field, Cursored cursor, shared Sequence[] sequencesToAdd...)
+void addSequences(shared Sequence[]* field, shared Cursored cursor, shared Sequence[] sequencesToAdd...)
 {
     long cursorSequence;
     shared Sequence[] updated;
@@ -117,7 +117,7 @@ public:
         return cast(int) atomicLoad!(MemoryOrder.acq)(&sequences).length;
     }
 
-    void addWhileRunning(Cursored cursor, shared Sequence sequence) shared
+    void addWhileRunning(shared Cursored cursor, shared Sequence sequence) shared
     {
         addSequences(&sequences, cursor, sequence);
     }
@@ -171,7 +171,7 @@ unittest
     class StubCursor : Cursored
     {
         long cursor = 0;
-        override long getCursor() { return cursor; }
+        override long getCursor() shared { return cursor; }
         void advance(long value) { cursor += value; }
     }
 
@@ -180,12 +180,12 @@ unittest
 
     cursor.advance(5);
     auto seq1 = new shared Sequence();
-    group.addWhileRunning(cursor, seq1);
+    group.addWhileRunning(cast(shared Cursored)cursor, seq1);
     assert(seq1.get == 5);
 
     cursor.advance(3);
     auto seq2 = new shared Sequence();
-    group.addWhileRunning(cursor, seq2);
+    group.addWhileRunning(cast(shared Cursored)cursor, seq2);
     assert(seq2.get == 8);
 
     assert(group.size == 2);
