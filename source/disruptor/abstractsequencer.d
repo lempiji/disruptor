@@ -12,12 +12,12 @@ abstract class AbstractSequencer : Sequencer
 {
 protected:
     int bufferSize;
-    WaitStrategy waitStrategy;
+    shared WaitStrategy waitStrategy;
     shared Sequence cursor;
     align(16) shared Sequence[] gatingSequences = [];
 
 public:
-    this(int bufferSize, WaitStrategy waitStrategy)
+    this(int bufferSize, shared WaitStrategy waitStrategy)
     {
         if (bufferSize < 1)
             throw new Exception("bufferSize must not be less than 1");
@@ -90,7 +90,7 @@ unittest
     // Minimal implementation for testing.
     class DummySequencer : AbstractSequencer
     {
-        this(int size, WaitStrategy strategy)
+        this(int size, shared WaitStrategy strategy)
         {
             super(size, strategy);
         }
@@ -114,15 +114,15 @@ unittest
         EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...) { return null; }
     }
 
-    auto strategy = new SleepingWaitStrategy();
+    auto strategy = new shared SleepingWaitStrategy();
     auto seq = new DummySequencer(8, strategy);
 
     auto g1 = new shared Sequence();
     auto g2 = new shared Sequence();
 
     seq.addGatingSequences(g1, g2);
-    assert(g1.get == (cast(shared)seq).getCursor());
-    assert(g2.get == (cast(shared)seq).getCursor());
+    assert(g1.get == seq.cursor.get());
+    assert(g2.get == seq.cursor.get());
 
     seq.setCursor(7);
 

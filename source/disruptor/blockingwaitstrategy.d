@@ -14,10 +14,10 @@ class BlockingWaitStrategy : WaitStrategy
     private Mutex _mutex;
     private Condition _cond;
 
-    this()
+    this() shared
     {
-        _mutex = new Mutex();
-        _cond = new Condition(_mutex);
+        _mutex = new shared Mutex();
+        _cond = new shared Condition(_mutex);
     }
 
     override long waitFor(long sequence, shared Sequence cursor, shared Sequence dependentSequence, shared SequenceBarrier barrier) shared
@@ -65,19 +65,19 @@ unittest
         override void checkAlert() shared {}
     }
 
-    auto strategy = new BlockingWaitStrategy();
+    auto strategy = new shared BlockingWaitStrategy();
     auto cursor = new shared Sequence(0);
     auto dependent = new shared Sequence();
-    auto barrier = new DummySequenceBarrier();
+    auto barrier = new shared DummySequenceBarrier();
 
     auto t = new Thread({
         Thread.sleep(50.msecs);
         dependent.incrementAndGet();
-        (cast(shared BlockingWaitStrategy)strategy).signalAllWhenBlocking();
+        strategy.signalAllWhenBlocking();
     });
     t.start();
 
-    auto result = (cast(shared BlockingWaitStrategy)strategy).waitFor(0, cursor, dependent, cast(shared SequenceBarrier)barrier);
+    auto result = strategy.waitFor(0, cursor, dependent, barrier);
     assert(result == 0);
     t.join();
 }

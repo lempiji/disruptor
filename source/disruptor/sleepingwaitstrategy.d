@@ -16,17 +16,17 @@ class SleepingWaitStrategy : WaitStrategy
     private int retries;
     private long sleepTimeNs;
 
-    this()
+    this() shared
     {
         this(DEFAULT_RETRIES, DEFAULT_SLEEP);
     }
 
-    this(int retries)
+    this(int retries) shared
     {
         this(retries, DEFAULT_SLEEP);
     }
 
-    this(int retries, long sleepTimeNs)
+    this(int retries, long sleepTimeNs) shared
     {
         this.retries = retries;
         this.sleepTimeNs = sleepTimeNs;
@@ -84,19 +84,19 @@ unittest
         override void checkAlert() shared {}
     }
 
-    auto strategy = new SleepingWaitStrategy();
+    auto strategy = new shared SleepingWaitStrategy();
     auto cursor = new shared Sequence(0);
     auto dependent = new shared Sequence();
-    auto barrier = new DummySequenceBarrier();
+    auto barrier = new shared DummySequenceBarrier();
 
     auto t = new Thread({
         Thread.sleep(50.msecs);
         dependent.incrementAndGet();
-        (cast(shared SleepingWaitStrategy)strategy).signalAllWhenBlocking();
+        strategy.signalAllWhenBlocking();
     });
     t.start();
 
-    auto result = (cast(shared SleepingWaitStrategy)strategy).waitFor(0, cursor, dependent, cast(shared SequenceBarrier)barrier);
+    auto result = strategy.waitFor(0, cursor, dependent, barrier);
     assert(result == 0);
     t.join();
 }
