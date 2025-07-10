@@ -110,12 +110,12 @@ unittest
         override void publish(long lo, long hi) {}
         override void claim(long sequence) {}
         override bool isAvailable(long sequence) { return false; }
-        override void addGatingSequences(Sequence[] gatingSequences...) {}
-        override bool removeGatingSequence(Sequence sequence) { return false; }
-        override SequenceBarrier newBarrier(Sequence[] sequencesToTrack...) { return null; }
+        override void addGatingSequences(shared Sequence[] gatingSequences...) {}
+        override bool removeGatingSequence(shared Sequence sequence) { return false; }
+        override SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) { return null; }
         override long getMinimumSequence() { return 0; }
         override long getHighestPublishedSequence(long nextSequence, long availableSequence) { return availableSequence; }
-        EventPoller!T newPoller(T)(DataProvider!T provider, Sequence[] gatingSequences...) { return null; }
+        EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...) { return null; }
     }
 
     auto cursor = new shared Sequence(10);
