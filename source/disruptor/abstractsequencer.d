@@ -30,7 +30,7 @@ public:
     }
 
     /// Return the current cursor value.
-    override long getCursor() @nogc nothrow
+    override long getCursor() shared @nogc nothrow
     {
         return cursor.get();
     }
@@ -44,7 +44,7 @@ public:
     /// Add gating sequences to be tracked by this sequencer.
     override void addGatingSequences(shared Sequence[] sequencesToAdd...)
     {
-        addSequences(&gatingSequences, cast(Cursored)this, sequencesToAdd);
+        addSequences(&gatingSequences, cast(shared Cursored)this, sequencesToAdd);
     }
 
     /// Remove a gating sequence.
@@ -121,8 +121,8 @@ unittest
     auto g2 = new shared Sequence();
 
     seq.addGatingSequences(g1, g2);
-    assert(g1.get == seq.getCursor());
-    assert(g2.get == seq.getCursor());
+    assert(g1.get == (cast(shared)seq).getCursor());
+    assert(g2.get == (cast(shared)seq).getCursor());
 
     seq.setCursor(7);
 

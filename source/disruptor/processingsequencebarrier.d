@@ -98,7 +98,7 @@ unittest
     {
         shared Sequence cursor;
         this(shared Sequence cursor) { this.cursor = cursor; }
-        override long getCursor() { return cursor.get(); }
+        override long getCursor() shared { return cursor.get(); }
         override int getBufferSize() { return 0; }
         override bool hasAvailableCapacity(int requiredCapacity) { return false; }
         override long remainingCapacity() { return 0; }

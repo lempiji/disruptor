@@ -4,7 +4,7 @@ import disruptor.sequence;
 
 interface Cursored
 {
-    long getCursor();
+    long getCursor() shared;
 }
 
 interface Sequenced
