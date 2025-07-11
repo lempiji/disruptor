@@ -74,8 +74,8 @@ public:
     abstract override long next(int n);
     abstract override long tryNext();
     abstract override long tryNext(int n);
-    abstract override void publish(long sequence);
-    abstract override void publish(long lo, long hi);
+    abstract override void publish(long sequence) shared;
+    abstract override void publish(long lo, long hi) shared;
     abstract override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared;
     EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...)
     {
@@ -108,8 +108,8 @@ unittest
         override long next(int n) { return 0; }
         override long tryNext() { return 0; }
         override long tryNext(int n) { return 0; }
-        override void publish(long sequence) {}
-        override void publish(long lo, long hi) {}
+        override void publish(long sequence) shared {}
+        override void publish(long lo, long hi) shared {}
         override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared { return availableSequence; }
         EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...) { return null; }
     }

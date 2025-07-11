@@ -16,8 +16,8 @@ interface Sequenced
     long next(int n);
     long tryNext();
     long tryNext(int n);
-    void publish(long sequence);
-    void publish(long lo, long hi);
+    void publish(long sequence) shared;
+    void publish(long lo, long hi) shared;
 }
 
 interface SequenceBarrier
