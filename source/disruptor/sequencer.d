@@ -48,7 +48,7 @@ interface Sequencer : Cursored, Sequenced
     bool isAvailable(long sequence) shared;
     void addGatingSequences(shared Sequence[] gatingSequences...);
     bool removeGatingSequence(shared Sequence sequence);
-    SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) shared;
+    shared(SequenceBarrier) newBarrier(shared Sequence[] sequencesToTrack...) shared;
     long getMinimumSequence();
     long getHighestPublishedSequence(long nextSequence, long availableSequence) shared;
     EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...);
