@@ -1,5 +1,6 @@
 module disruptor.processingsequencebarrier;
 
+import core.atomic;
 import disruptor.sequence : Sequence;
 import disruptor.fixedsequencegroup : FixedSequenceGroup;
 import disruptor.waitstrategy : WaitStrategy;
@@ -22,7 +23,7 @@ private:
     shared WaitStrategy _waitStrategy;
     shared Sequence _cursorSequence;
     shared Sequence _dependentSequence;
-    bool _alerted = false;
+    shared bool _alerted = false;
 
 public:
     this(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
@@ -81,23 +82,23 @@ public:
 
     override bool isAlerted() shared
     {
-        return _alerted;
+        return atomicLoad!(MemoryOrder.acq)(_alerted);
     }
 
     override void alert() shared
     {
-        _alerted = true;
+        atomicStore!(MemoryOrder.rel)(_alerted, true);
         _waitStrategy.signalAllWhenBlocking();
     }
 
     override void clearAlert() shared
     {
-        _alerted = false;
+        atomicStore!(MemoryOrder.rel)(_alerted, false);
     }
 
     override void checkAlert() shared
     {
-        if (_alerted)
+        if (atomicLoad!(MemoryOrder.acq)(_alerted))
         {
             throw new AlertException();
         }
