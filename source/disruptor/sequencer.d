@@ -45,11 +45,11 @@ interface Sequencer : Cursored, Sequenced
     enum long INITIAL_CURSOR_VALUE = -1;
 
     void claim(long sequence);
-    bool isAvailable(long sequence);
+    bool isAvailable(long sequence) shared;
     void addGatingSequences(shared Sequence[] gatingSequences...);
     bool removeGatingSequence(shared Sequence sequence);
-    SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...);
+    SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) shared;
     long getMinimumSequence();
-    long getHighestPublishedSequence(long nextSequence, long availableSequence);
+    long getHighestPublishedSequence(long nextSequence, long availableSequence) shared;
     EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...);
 }

@@ -60,14 +60,14 @@ public:
     }
 
     /// Create a new sequence barrier tracking the given sequences.
-    override SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...)
+    override SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) shared
     {
         return new ProcessingSequenceBarrier(this, waitStrategy, cursor, sequencesToTrack);
     }
 
     // Abstract methods to be provided by subclasses.
     abstract override void claim(long sequence);
-    abstract override bool isAvailable(long sequence);
+    abstract override bool isAvailable(long sequence) shared;
     abstract override bool hasAvailableCapacity(int requiredCapacity);
     abstract override long remainingCapacity();
     abstract override long next();
@@ -76,7 +76,7 @@ public:
     abstract override long tryNext(int n);
     abstract override void publish(long sequence);
     abstract override void publish(long lo, long hi);
-    abstract override long getHighestPublishedSequence(long nextSequence, long availableSequence);
+    abstract override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared;
     EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...)
     {
         return null;
@@ -101,7 +101,7 @@ unittest
         }
 
         override void claim(long sequence) {}
-        override bool isAvailable(long sequence) { return true; }
+        override bool isAvailable(long sequence) shared { return true; }
         override bool hasAvailableCapacity(int requiredCapacity) { return true; }
         override long remainingCapacity() { return 0; }
         override long next() { return 0; }
@@ -110,7 +110,7 @@ unittest
         override long tryNext(int n) { return 0; }
         override void publish(long sequence) {}
         override void publish(long lo, long hi) {}
-        override long getHighestPublishedSequence(long nextSequence, long availableSequence) { return availableSequence; }
+        override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared { return availableSequence; }
         EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...) { return null; }
     }
 

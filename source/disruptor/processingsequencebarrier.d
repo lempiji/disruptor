@@ -18,14 +18,14 @@ class AlertException : Exception
 class ProcessingSequenceBarrier : SequenceBarrier
 {
 private:
-    Sequencer _sequencer;
+    shared Sequencer _sequencer;
     shared WaitStrategy _waitStrategy;
     shared Sequence _cursorSequence;
     shared Sequence _dependentSequence;
     bool _alerted = false;
 
 public:
-    this(Sequencer sequencer, shared WaitStrategy waitStrategy,
+    this(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
             shared Sequence cursorSequence, shared Sequence[] dependentSequences = [])
     {
         this._sequencer = sequencer;
@@ -42,10 +42,10 @@ public:
         }
     }
 
-    this(Sequencer sequencer, shared WaitStrategy waitStrategy,
+    this(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
             shared Sequence cursorSequence, shared Sequence[] dependentSequences = []) shared
     {
-        (cast(ProcessingSequenceBarrier)this)._sequencer = sequencer;
+        this._sequencer = sequencer;
         this._waitStrategy = waitStrategy;
         this._cursorSequence = cursorSequence;
 
@@ -71,7 +71,7 @@ public:
             return availableSequence;
         }
 
-        return (cast(Sequencer)_sequencer).getHighestPublishedSequence(sequence, availableSequence);
+        return _sequencer.getHighestPublishedSequence(sequence, availableSequence);
     }
 
     override long getCursor() shared
@@ -114,7 +114,7 @@ unittest
     class DummySequencer : Sequencer
     {
         shared Sequence cursor;
-        this(shared Sequence cursor) { this.cursor = cursor; }
+        this(shared Sequence cursor) shared { this.cursor = cursor; }
         override long getCursor() shared { return cursor.get(); }
         override int getBufferSize() { return 0; }
         override bool hasAvailableCapacity(int requiredCapacity) { return false; }
@@ -126,17 +126,17 @@ unittest
         override void publish(long sequence) {}
         override void publish(long lo, long hi) {}
         override void claim(long sequence) {}
-        override bool isAvailable(long sequence) { return false; }
+        override bool isAvailable(long sequence) shared { return false; }
         override void addGatingSequences(shared Sequence[] gatingSequences...) {}
         override bool removeGatingSequence(shared Sequence sequence) { return false; }
-        override SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) { return null; }
+        override SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) shared { return null; }
         override long getMinimumSequence() { return 0; }
-        override long getHighestPublishedSequence(long nextSequence, long availableSequence) { return availableSequence; }
+        override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared { return availableSequence; }
         EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...) { return null; }
     }
 
     auto cursor = new shared Sequence(10);
-    auto sequencer = new DummySequencer(cursor);
+    auto sequencer = new shared DummySequencer(cursor);
     auto waitStrategy = new shared BusySpinWaitStrategy();
 
     auto dep1 = new shared Sequence(10);

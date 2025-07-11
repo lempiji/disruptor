@@ -146,14 +146,14 @@ private:
     }
 
 public:
-    override bool isAvailable(long sequence)
+    override bool isAvailable(long sequence) shared
     {
-        int index = calculateIndex(sequence);
-        int flag = calculateAvailabilityFlag(sequence);
+        int index = (cast(MultiProducerSequencer)this).calculateIndex(sequence);
+        int flag = (cast(MultiProducerSequencer)this).calculateAvailabilityFlag(sequence);
         return atomicLoad!(MemoryOrder.acq)(availableBuffer[index]) == flag;
     }
 
-    override long getHighestPublishedSequence(long lowerBound, long availableSequence)
+    override long getHighestPublishedSequence(long lowerBound, long availableSequence) shared
     {
         for (long sequence = lowerBound; sequence <= availableSequence; sequence++)
         {
@@ -184,11 +184,12 @@ unittest
     sequencer.publish(3);
     sequencer.publish(5);
 
-    assert(!sequencer.isAvailable(0));
-    assert(!sequencer.isAvailable(1));
-    assert(!sequencer.isAvailable(2));
-    assert(sequencer.isAvailable(3));
-    assert(!sequencer.isAvailable(4));
-    assert(sequencer.isAvailable(5));
-    assert(!sequencer.isAvailable(6));
+    auto sharedSeq = cast(shared MultiProducerSequencer)sequencer;
+    assert(!sharedSeq.isAvailable(0));
+    assert(!sharedSeq.isAvailable(1));
+    assert(!sharedSeq.isAvailable(2));
+    assert(sharedSeq.isAvailable(3));
+    assert(!sharedSeq.isAvailable(4));
+    assert(sharedSeq.isAvailable(5));
+    assert(!sharedSeq.isAvailable(6));
 }
