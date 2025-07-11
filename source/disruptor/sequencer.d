@@ -46,8 +46,8 @@ interface Sequencer : Cursored, Sequenced
 
     void claim(long sequence);
     bool isAvailable(long sequence) shared;
-    void addGatingSequences(shared Sequence[] gatingSequences...);
-    bool removeGatingSequence(shared Sequence sequence);
+    void addGatingSequences(shared Sequence[] gatingSequences...) shared;
+    bool removeGatingSequence(shared Sequence sequence) shared;
     SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) shared;
     long getMinimumSequence();
     long getHighestPublishedSequence(long nextSequence, long availableSequence) shared;
