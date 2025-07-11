@@ -42,6 +42,23 @@ public:
         }
     }
 
+    this(Sequencer sequencer, shared WaitStrategy waitStrategy,
+            shared Sequence cursorSequence, shared Sequence[] dependentSequences = []) shared
+    {
+        (cast(ProcessingSequenceBarrier)this)._sequencer = sequencer;
+        this._waitStrategy = waitStrategy;
+        this._cursorSequence = cursorSequence;
+
+        if (dependentSequences.length == 0)
+        {
+            this._dependentSequence = cursorSequence;
+        }
+        else
+        {
+            this._dependentSequence = new shared FixedSequenceGroup(dependentSequences);
+        }
+    }
+
     override long waitFor(long sequence) shared
     {
         checkAlert();
@@ -126,7 +143,7 @@ unittest
     auto dep2 = new shared Sequence(9);
     auto dep3 = new shared Sequence(10);
 
-    auto barrier = cast(shared) new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [dep1, dep2, dep3]);
+    auto barrier = new shared ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [dep1, dep2, dep3]);
     auto result = barrier.waitFor(9);
     assert(result >= 9);
 
@@ -140,7 +157,7 @@ unittest
     // alert behaviour during wait
     bool caught = false;
     auto dep4 = new shared Sequence(0);
-    auto barrier2 = cast(shared) new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [dep4]);
+    auto barrier2 = new shared ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [dep4]);
     auto t = new Thread({
         try { barrier2.waitFor(1); } catch(Exception e) { caught = true; }
     });
@@ -154,7 +171,7 @@ unittest
     auto worker1 = new shared Sequence(8);
     auto worker2 = new shared Sequence(8);
     auto worker3 = new shared Sequence(8);
-    auto barrier3 = cast(shared) new ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [worker1, worker2, worker3]);
+    auto barrier3 = new shared ProcessingSequenceBarrier(sequencer, waitStrategy, cursor, [worker1, worker2, worker3]);
     auto thread = new Thread({
         Thread.sleep(20.msecs);
         foreach (ref seq; [worker1, worker2, worker3])
