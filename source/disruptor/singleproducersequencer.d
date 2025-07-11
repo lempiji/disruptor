@@ -21,6 +21,11 @@ public:
         super(bufferSize, waitStrategy);
     }
 
+    this(int bufferSize, shared WaitStrategy waitStrategy) shared
+    {
+        super(bufferSize, waitStrategy);
+    }
+
     override bool hasAvailableCapacity(int requiredCapacity)
     {
         return hasAvailableCapacity(requiredCapacity, false);
@@ -141,15 +146,15 @@ unittest
 {
     import disruptor.yieldingwaitstrategy : YieldingWaitStrategy;
 
-    auto sequencer = new SingleProducerSequencer(16, new shared YieldingWaitStrategy());
+    auto sequencer = new shared SingleProducerSequencer(16, new shared YieldingWaitStrategy());
 
     foreach (i; 0 .. 32)
     {
-        auto next = sequencer.next();
-        assert((cast(shared SingleProducerSequencer)sequencer).getCursor() != next);
+        auto next = (cast() sequencer).next();
+        assert(sequencer.getCursor() != next);
 
-        sequencer.hasAvailableCapacity(13);
-        assert((cast(shared SingleProducerSequencer)sequencer).getCursor() != next);
+        (cast() sequencer).hasAvailableCapacity(13);
+        assert(sequencer.getCursor() != next);
 
         (cast(shared SingleProducerSequencer)sequencer).publish(next);
     }

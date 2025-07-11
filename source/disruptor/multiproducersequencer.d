@@ -30,6 +30,17 @@ public:
         indexShift = log2(bufferSize);
     }
 
+    this(int bufferSize, shared WaitStrategy waitStrategy) shared
+    {
+        super(bufferSize, waitStrategy);
+        gatingSequenceCache = new shared Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+        availableBuffer = new shared int[](bufferSize);
+        foreach (i; 0 .. bufferSize)
+            availableBuffer[i] = -1;
+        indexMask = bufferSize - 1;
+        indexShift = log2(bufferSize);
+    }
+
     override bool hasAvailableCapacity(int requiredCapacity)
     {
         return hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
@@ -179,12 +190,12 @@ unittest
 {
     import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
 
-    auto sequencer = new MultiProducerSequencer(1024, new shared BlockingWaitStrategy());
+    auto sequencer = new shared MultiProducerSequencer(1024, new shared BlockingWaitStrategy());
 
-    (cast(shared MultiProducerSequencer)sequencer).publish(3);
-    (cast(shared MultiProducerSequencer)sequencer).publish(5);
+    sequencer.publish(3);
+    sequencer.publish(5);
 
-    auto sharedSeq = cast(shared MultiProducerSequencer)sequencer;
+    auto sharedSeq = sequencer;
     assert(!sharedSeq.isAvailable(0));
     assert(!sharedSeq.isAvailable(1));
     assert(!sharedSeq.isAvailable(2));

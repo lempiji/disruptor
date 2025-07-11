@@ -29,6 +29,18 @@ public:
         this.cursor = new shared Sequence(Sequencer.INITIAL_CURSOR_VALUE);
     }
 
+    this(int bufferSize, shared WaitStrategy waitStrategy) shared
+    {
+        if (bufferSize < 1)
+            throw new Exception("bufferSize must not be less than 1");
+        if ((bufferSize & (bufferSize - 1)) != 0)
+            throw new Exception("bufferSize must be a power of 2");
+
+        this.bufferSize = bufferSize;
+        this.waitStrategy = waitStrategy;
+        this.cursor = new shared Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    }
+
     /// Return the current cursor value.
     override long getCursor() shared @nogc nothrow
     {
@@ -95,6 +107,11 @@ unittest
             super(size, strategy);
         }
 
+        this(int size, shared WaitStrategy strategy) shared
+        {
+            super(size, strategy);
+        }
+
         void setCursor(long value)
         {
             cursor.set(value);
@@ -115,25 +132,25 @@ unittest
     }
 
     auto strategy = new shared SleepingWaitStrategy();
-    auto seq = new DummySequencer(8, strategy);
+    auto seq = new shared DummySequencer(8, strategy);
 
     auto g1 = new shared Sequence();
     auto g2 = new shared Sequence();
 
-    (cast(shared DummySequencer)seq).addGatingSequences(g1, g2);
+    seq.addGatingSequences(g1, g2);
     assert(g1.get == seq.cursor.get());
     assert(g2.get == seq.cursor.get());
 
-    seq.setCursor(7);
+    (cast() seq).setCursor(7);
 
     // Both gating sequences at initial value -> minimum equals initial value
-    assert(seq.getMinimumSequence() == Sequence.INITIAL_VALUE);
+    assert((cast() seq).getMinimumSequence() == Sequence.INITIAL_VALUE);
 
     g1.set(5);
     g2.set(7);
-    assert(seq.getMinimumSequence() == 5);
+    assert((cast() seq).getMinimumSequence() == 5);
 
-    assert((cast(shared DummySequencer)seq).removeGatingSequence(g1));
-    assert(!(cast(shared DummySequencer)seq).removeGatingSequence(g1));
-    assert(seq.getMinimumSequence() == 7);
+    assert(seq.removeGatingSequence(g1));
+    assert(!seq.removeGatingSequence(g1));
+    assert((cast() seq).getMinimumSequence() == 7);
 }
