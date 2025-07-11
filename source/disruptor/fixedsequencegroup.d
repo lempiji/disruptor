@@ -43,7 +43,7 @@ public:
         assert(0, "unsupported");
     }
 
-    override string toString() const
+    override string toString() const shared
     {
         import std.array : appender;
         import std.conv : to;
@@ -54,7 +54,7 @@ public:
         {
             if (i != 0)
                 app.put(", ");
-            app.put((cast(shared const Sequence) seq).get.to!string);
+            app.put(seq.get.to!string);
         }
         app.put("]");
         return app.data;
