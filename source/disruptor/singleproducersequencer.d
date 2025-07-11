@@ -40,7 +40,7 @@ private:
                 cursor.setVolatile(nextValue); // StoreLoad fence
             }
 
-            long minSequence = utilGetMinimumSequence(cast(shared const Sequence[]) gatingSequences, nextValue);
+            long minSequence = utilGetMinimumSequence(gatingSequences, nextValue);
             this.cachedValue = minSequence;
 
             if (wrapPoint > minSequence)
@@ -73,7 +73,7 @@ public:
             cursor.setVolatile(nextValue); // StoreLoad fence
 
             long minSequence;
-            while (wrapPoint > (minSequence = utilGetMinimumSequence(cast(shared const Sequence[]) gatingSequences, nextValue)))
+            while (wrapPoint > (minSequence = utilGetMinimumSequence(gatingSequences, nextValue)))
             {
                 Thread.yield();
             }
@@ -104,7 +104,7 @@ public:
     override long remainingCapacity()
     {
         long nextValue = this.nextValue;
-        long consumed = utilGetMinimumSequence(cast(shared const Sequence[]) gatingSequences, nextValue);
+        long consumed = utilGetMinimumSequence(gatingSequences, nextValue);
         long produced = nextValue;
         return bufferSize - (produced - consumed);
     }

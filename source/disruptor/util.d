@@ -21,13 +21,13 @@ int ceilingNextPowerOfTwo(int x)
 }
 
 /// Get the minimum sequence from an array of sequences.
-long getMinimumSequence(shared const(Sequence)[] sequences) @nogc nothrow
+long getMinimumSequence(scope const(shared Sequence)[] sequences) @nogc nothrow
 {
     return getMinimumSequence(sequences, long.max);
 }
 
 /// Get the minimum sequence from an array of sequences with a default value.
-long getMinimumSequence(shared const(Sequence)[] sequences, long minimum) @nogc nothrow
+long getMinimumSequence(scope const(shared Sequence)[] sequences, long minimum) @nogc nothrow
 {
     auto min = minimum;
     foreach (s; sequences)
@@ -83,8 +83,8 @@ unittest
     auto seq2 = new shared Sequence(3);
     auto seq3 = new shared Sequence(12);
     shared Sequence[] seqs = [seq1, seq2, seq3];
-    assert(getMinimumSequence(cast(shared const Sequence[]) seqs) == 3);
-    assert(getMinimumSequence(cast(shared const Sequence[])[]) == long.max);
+    assert(getMinimumSequence(seqs) == 3);
+    assert(getMinimumSequence(cast(shared Sequence[])[]) == long.max);
 
     assertThrown!Exception(log2(0));
     assertThrown!Exception(log2(-1));

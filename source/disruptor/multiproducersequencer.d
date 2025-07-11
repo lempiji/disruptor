@@ -43,7 +43,7 @@ private:
 
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > cursorValue)
         {
-            long minSequence = utilGetMinimumSequence(cast(shared const Sequence[]) gatingSequences, cursorValue);
+            long minSequence = utilGetMinimumSequence(gatingSequences, cursorValue);
             gatingSequenceCache.set(minSequence);
 
             if (wrapPoint > minSequence)
@@ -78,7 +78,7 @@ public:
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current)
         {
             long gatingSequence;
-            while (wrapPoint > (gatingSequence = utilGetMinimumSequence(cast(shared const Sequence[]) gatingSequences, current)))
+            while (wrapPoint > (gatingSequence = utilGetMinimumSequence(gatingSequences, current)))
             {
                 Thread.yield();
             }
@@ -114,7 +114,7 @@ public:
 
     override long remainingCapacity()
     {
-        long consumed = utilGetMinimumSequence(cast(shared const Sequence[]) gatingSequences, cursor.get());
+        long consumed = utilGetMinimumSequence(gatingSequences, cursor.get());
         long produced = cursor.get();
         return bufferSize - (produced - consumed);
     }

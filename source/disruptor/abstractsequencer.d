@@ -56,7 +56,7 @@ public:
     /// Get the minimum sequence seen by gating sequences.
     override long getMinimumSequence() @nogc nothrow
     {
-        return utilGetMinimumSequence(cast(shared const Sequence[]) gatingSequences, cursor.get());
+        return utilGetMinimumSequence(gatingSequences, cursor.get());
     }
 
     /// Create a new sequence barrier tracking the given sequences.
