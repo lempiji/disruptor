@@ -58,7 +58,7 @@ int log2(int value)
 }
 
 /// Wait on the calling thread for approximately the given nanoseconds.
-long awaitNanos(Condition cond, long timeoutNanos)
+long awaitNanos(shared Condition cond, long timeoutNanos)
 {
     auto start = MonoTime.currTime;
     auto mtx = cond.mutex;
@@ -95,4 +95,28 @@ unittest
     assert(log2(3) == 1);
     assert(log2(1024) == 10);
     assert(log2(int.max) == 30);
+}
+
+unittest
+{
+    import core.sync.mutex : Mutex;
+    import core.sync.condition : Condition;
+    import core.thread : Thread;
+    import core.time : msecs;
+
+    auto mtx = new shared Mutex();
+    auto cond = new shared Condition(mtx);
+
+    auto t = new Thread({
+        Thread.sleep(50.msecs);
+        mtx.lock();
+        scope(exit) mtx.unlock();
+        cond.notify();
+    });
+    t.start();
+
+    enum long timeout = 200_000_000; // 200ms
+    auto remaining = awaitNanos(cond, timeout);
+    assert(remaining > 0 && remaining <= timeout);
+    t.join();
 }
