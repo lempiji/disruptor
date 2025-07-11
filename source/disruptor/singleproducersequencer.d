@@ -114,13 +114,13 @@ public:
         this.nextValue = sequence;
     }
 
-    override void publish(long sequence)
+    override void publish(long sequence) shared
     {
         cursor.set(sequence);
         waitStrategy.signalAllWhenBlocking();
     }
 
-    override void publish(long lo, long hi)
+    override void publish(long lo, long hi) shared
     {
         publish(hi);
     }
@@ -151,7 +151,7 @@ unittest
         sequencer.hasAvailableCapacity(13);
         assert((cast(shared SingleProducerSequencer)sequencer).getCursor() != next);
 
-        sequencer.publish(next);
+        (cast(shared SingleProducerSequencer)sequencer).publish(next);
     }
 }
 

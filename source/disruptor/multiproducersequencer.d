@@ -119,17 +119,17 @@ public:
         return bufferSize - (produced - consumed);
     }
 
-    override void publish(long sequence)
+    override void publish(long sequence) shared
     {
-        (cast(shared) this).setAvailable(sequence);
+        setAvailable(sequence);
         waitStrategy.signalAllWhenBlocking();
     }
 
-    override void publish(long lo, long hi)
+    override void publish(long lo, long hi) shared
     {
         for (long l = lo; l <= hi; l++)
         {
-            (cast(shared) this).setAvailable(l);
+            setAvailable(l);
         }
         waitStrategy.signalAllWhenBlocking();
     }
@@ -181,8 +181,8 @@ unittest
 
     auto sequencer = new MultiProducerSequencer(1024, new shared BlockingWaitStrategy());
 
-    sequencer.publish(3);
-    sequencer.publish(5);
+    (cast(shared MultiProducerSequencer)sequencer).publish(3);
+    (cast(shared MultiProducerSequencer)sequencer).publish(5);
 
     auto sharedSeq = cast(shared MultiProducerSequencer)sequencer;
     assert(!sharedSeq.isAvailable(0));
