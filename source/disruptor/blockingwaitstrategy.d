@@ -11,8 +11,8 @@ import disruptor.waitstrategy : WaitStrategy;
 /// Blocking strategy that waits on a condition variable.
 class BlockingWaitStrategy : WaitStrategy
 {
-    private Mutex _mutex;
-    private Condition _cond;
+    private shared Mutex _mutex;
+    private shared Condition _cond;
 
     this() shared
     {
