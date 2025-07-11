@@ -20,7 +20,7 @@ public:
     override long get() const shared @nogc nothrow
     {
         // The array is immutable so no atomic load needed
-        return getMinimumSequence(cast(shared const Sequence[]) sequences);
+        return getMinimumSequence(sequences);
     }
 
     override void set(long value) shared @nogc nothrow

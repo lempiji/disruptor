@@ -7,7 +7,7 @@ import disruptor.sequencer : Cursored;
 import disruptor.util : getMinimumSequence;
 
 
-private int countMatching(shared const(Sequence)[] values, shared const(Sequence) toMatch) @nogc nothrow
+private int countMatching(scope const(shared Sequence)[] values, const(shared Sequence) toMatch) @nogc nothrow
 {
     int count = 0;
     foreach (v; values)
