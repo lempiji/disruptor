@@ -84,7 +84,8 @@ unittest
     auto seq3 = new shared Sequence(12);
     shared Sequence[] seqs = [seq1, seq2, seq3];
     assert(getMinimumSequence(seqs) == 3);
-    assert(getMinimumSequence(cast(shared Sequence[])[]) == long.max);
+    shared Sequence[] empty;
+    assert(getMinimumSequence(empty) == long.max);
 
     assertThrown!Exception(log2(0));
     assertThrown!Exception(log2(-1));
