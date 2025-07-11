@@ -141,17 +141,18 @@ unittest
 {
     import disruptor.yieldingwaitstrategy : YieldingWaitStrategy;
 
-    auto sequencer = new SingleProducerSequencer(16, new shared YieldingWaitStrategy());
+    shared SingleProducerSequencer sequencer =
+        cast(shared) new SingleProducerSequencer(16, new shared YieldingWaitStrategy());
 
     foreach (i; 0 .. 32)
     {
-        auto next = sequencer.next();
-        assert((cast(shared SingleProducerSequencer)sequencer).getCursor() != next);
+        auto next = (cast(SingleProducerSequencer)sequencer).next();
+        assert(sequencer.getCursor() != next);
 
-        sequencer.hasAvailableCapacity(13);
-        assert((cast(shared SingleProducerSequencer)sequencer).getCursor() != next);
+        (cast(SingleProducerSequencer)sequencer).hasAvailableCapacity(13);
+        assert(sequencer.getCursor() != next);
 
-        (cast(shared SingleProducerSequencer)sequencer).publish(next);
+        sequencer.publish(next);
     }
 }
 

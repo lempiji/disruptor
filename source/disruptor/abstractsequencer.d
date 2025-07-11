@@ -115,25 +115,25 @@ unittest
     }
 
     auto strategy = new shared SleepingWaitStrategy();
-    auto seq = new DummySequencer(8, strategy);
+    shared DummySequencer seq = cast(shared) new DummySequencer(8, strategy);
 
     auto g1 = new shared Sequence();
     auto g2 = new shared Sequence();
 
-    (cast(shared DummySequencer)seq).addGatingSequences(g1, g2);
+    seq.addGatingSequences(g1, g2);
     assert(g1.get == seq.cursor.get());
     assert(g2.get == seq.cursor.get());
 
-    seq.setCursor(7);
+    (cast(DummySequencer)seq).setCursor(7);
 
     // Both gating sequences at initial value -> minimum equals initial value
-    assert(seq.getMinimumSequence() == Sequence.INITIAL_VALUE);
+    assert((cast(DummySequencer)seq).getMinimumSequence() == Sequence.INITIAL_VALUE);
 
     g1.set(5);
     g2.set(7);
-    assert(seq.getMinimumSequence() == 5);
+    assert((cast(DummySequencer)seq).getMinimumSequence() == 5);
 
-    assert((cast(shared DummySequencer)seq).removeGatingSequence(g1));
-    assert(!(cast(shared DummySequencer)seq).removeGatingSequence(g1));
-    assert(seq.getMinimumSequence() == 7);
+    assert(seq.removeGatingSequence(g1));
+    assert(!seq.removeGatingSequence(g1));
+    assert((cast(DummySequencer)seq).getMinimumSequence() == 7);
 }
