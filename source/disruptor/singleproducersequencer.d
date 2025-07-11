@@ -125,13 +125,13 @@ public:
         publish(hi);
     }
 
-    override bool isAvailable(long sequence)
+    override bool isAvailable(long sequence) shared
     {
         long currentSequence = cursor.get();
         return sequence <= currentSequence && sequence > currentSequence - bufferSize;
     }
 
-    override long getHighestPublishedSequence(long lowerBound, long availableSequence)
+    override long getHighestPublishedSequence(long lowerBound, long availableSequence) shared
     {
         return availableSequence;
     }
