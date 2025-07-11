@@ -57,9 +57,9 @@ public:
         return result - inc;
     }
 
-    override string toString() const
+    string toString() const shared
     {
-        return (cast(shared const Sequence)this).get.to!string;
+        return get.to!string;
     }
 }
 
