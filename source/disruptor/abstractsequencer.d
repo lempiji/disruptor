@@ -42,13 +42,13 @@ public:
     }
 
     /// Add gating sequences to be tracked by this sequencer.
-    override void addGatingSequences(shared Sequence[] sequencesToAdd...)
+    override void addGatingSequences(shared Sequence[] sequencesToAdd...) shared
     {
-        addSequences(&gatingSequences, cast(shared Cursored)this, sequencesToAdd);
+        addSequences(&gatingSequences, this, sequencesToAdd);
     }
 
     /// Remove a gating sequence.
-    override bool removeGatingSequence(shared Sequence sequence)
+    override bool removeGatingSequence(shared Sequence sequence) shared
     {
         return removeSequence(&gatingSequences, sequence);
     }
@@ -120,7 +120,7 @@ unittest
     auto g1 = new shared Sequence();
     auto g2 = new shared Sequence();
 
-    seq.addGatingSequences(g1, g2);
+    (cast(shared DummySequencer)seq).addGatingSequences(g1, g2);
     assert(g1.get == seq.cursor.get());
     assert(g2.get == seq.cursor.get());
 
@@ -133,7 +133,7 @@ unittest
     g2.set(7);
     assert(seq.getMinimumSequence() == 5);
 
-    assert(seq.removeGatingSequence(g1));
-    assert(!seq.removeGatingSequence(g1));
+    assert((cast(shared DummySequencer)seq).removeGatingSequence(g1));
+    assert(!(cast(shared DummySequencer)seq).removeGatingSequence(g1));
     assert(seq.getMinimumSequence() == 7);
 }

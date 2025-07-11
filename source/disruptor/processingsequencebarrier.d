@@ -127,8 +127,8 @@ unittest
         override void publish(long lo, long hi) {}
         override void claim(long sequence) {}
         override bool isAvailable(long sequence) shared { return false; }
-        override void addGatingSequences(shared Sequence[] gatingSequences...) {}
-        override bool removeGatingSequence(shared Sequence sequence) { return false; }
+        override void addGatingSequences(shared Sequence[] gatingSequences...) shared {}
+        override bool removeGatingSequence(shared Sequence sequence) shared { return false; }
         override SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) shared { return null; }
         override long getMinimumSequence() { return 0; }
         override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared { return availableSequence; }
