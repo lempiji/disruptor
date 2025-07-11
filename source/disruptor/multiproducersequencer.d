@@ -121,7 +121,7 @@ public:
 
     override void publish(long sequence)
     {
-        setAvailable(sequence);
+        (cast(shared) this).setAvailable(sequence);
         waitStrategy.signalAllWhenBlocking();
     }
 
@@ -129,18 +129,18 @@ public:
     {
         for (long l = lo; l <= hi; l++)
         {
-            setAvailable(l);
+            (cast(shared) this).setAvailable(l);
         }
         waitStrategy.signalAllWhenBlocking();
     }
 
 private:
-    void setAvailable(long sequence)
+    void setAvailable(long sequence) shared
     {
         setAvailableBufferValue(calculateIndex(sequence), calculateAvailabilityFlag(sequence));
     }
 
-    void setAvailableBufferValue(int index, int flag)
+    void setAvailableBufferValue(int index, int flag) shared
     {
         atomicStore!(MemoryOrder.rel)(availableBuffer[index], flag);
     }
@@ -148,8 +148,8 @@ private:
 public:
     override bool isAvailable(long sequence) shared
     {
-        int index = (cast(MultiProducerSequencer)this).calculateIndex(sequence);
-        int flag = (cast(MultiProducerSequencer)this).calculateAvailabilityFlag(sequence);
+        int index = calculateIndex(sequence);
+        int flag = calculateAvailabilityFlag(sequence);
         return atomicLoad!(MemoryOrder.acq)(availableBuffer[index]) == flag;
     }
 
@@ -164,12 +164,12 @@ public:
     }
 
 private:
-    int calculateAvailabilityFlag(long sequence)
+    int calculateAvailabilityFlag(long sequence) const shared
     {
         return cast(int)(sequence >>> indexShift);
     }
 
-    int calculateIndex(long sequence)
+    int calculateIndex(long sequence) const shared
     {
         return cast(int)sequence & indexMask;
     }
