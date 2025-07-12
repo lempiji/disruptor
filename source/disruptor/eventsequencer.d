@@ -4,14 +4,17 @@ module disruptor.eventsequencer;
 interface EventSequencer(T)
 {
     /// Get the event for a given sequence.
-    T get(long sequence) shared;
+    shared(T) get(long sequence) shared;
 }
 
 unittest
 {
     class DummySequencer : EventSequencer!int
     {
-        override int get(long sequence) shared { return cast(int)sequence; }
+        override shared(int) get(long sequence) shared
+        {
+            return cast(shared(int))sequence;
+        }
     }
 
     auto seq = new shared DummySequencer();
