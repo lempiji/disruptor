@@ -53,9 +53,9 @@ public:
         return new shared RingBuffer!T(factory, bufferSize, seq);
     }
 
-    override T get(long sequence) shared
+    override shared(T) get(long sequence) shared
     {
-        return cast(T) entries[cast(size_t)(sequence & indexMask)];
+        return entries[cast(size_t)(sequence & indexMask)];
     }
 
     override long next() shared
@@ -145,11 +145,11 @@ unittest
 
     auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
     auto seq = rb.next();
-    auto evt = rb.get(seq);
+    auto evt = cast(StubEvent) rb.get(seq);
     evt.value = 42;
     rb.publish(seq);
 
-    assert(rb.get(seq).value == 42);
+    assert((cast(StubEvent) rb.get(seq)).value == 42);
 
     auto g1 = new shared Sequence();
     auto g2 = new shared Sequence();
