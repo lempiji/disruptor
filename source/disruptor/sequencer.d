@@ -32,7 +32,7 @@ interface SequenceBarrier
 
 interface DataProvider(T)
 {
-    T get(long sequence) shared;
+    shared(T) get(long sequence) shared;
 }
 
 class EventPoller(T)
