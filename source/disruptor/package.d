@@ -20,3 +20,6 @@ public import disruptor.eventprocessor;
 public import disruptor.ringbuffer;
 public import disruptor.timeoutblockingwaitstrategy;
 public import disruptor.timeoutexception;
+public import disruptor.eventhandler;
+public import disruptor.rewindableeventhandler;
+public import disruptor.rewindableexception;
