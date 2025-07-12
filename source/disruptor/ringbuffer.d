@@ -57,7 +57,7 @@ public:
         return new shared RingBuffer!T(factory, bufferSize, seq);
     }
 
-    override shared(T) get(long sequence) shared
+    override shared(T) get(long sequence) shared nothrow
     {
         return entries[cast(size_t)(sequence & indexMask)];
     }
