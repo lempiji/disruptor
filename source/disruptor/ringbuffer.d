@@ -1,6 +1,7 @@
 module disruptor.ringbuffer;
 
 import disruptor.sequencer : Sequencer, Sequenced, Cursored, SequenceBarrier, DataProvider, EventPoller;
+import disruptor.abstractsequencer : AbstractSequencer;
 import disruptor.sequence : Sequence;
 import disruptor.singleproducersequencer : SingleProducerSequencer;
 import disruptor.multiproducersequencer : MultiProducerSequencer;
@@ -134,6 +135,12 @@ public:
     shared(SequenceBarrier) newBarrier(shared Sequence[] sequences...) shared
     {
         return sequencer.newBarrier(sequences);
+    }
+
+    shared(EventPoller!T) newPoller(shared Sequence[] gatingSequences...) shared
+    {
+        auto seq = cast(shared AbstractSequencer)sequencer;
+        return seq.newPoller!T(cast(shared DataProvider!T)this, gatingSequences);
     }
 
     // EventSink implementation using translators ---------------------------------

@@ -1,6 +1,7 @@
 module disruptor.sequencer;
 
 import disruptor.sequence;
+public import disruptor.eventpoller;
 
 interface Cursored
 {
@@ -35,10 +36,6 @@ interface DataProvider(T)
     shared(T) get(long sequence) shared;
 }
 
-class EventPoller(T)
-{
-    // placeholder class
-}
 
 interface Sequencer : Cursored, Sequenced
 {
