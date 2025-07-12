@@ -17,33 +17,33 @@ public:
         this.sequences = sequences.dup;
     }
 
-    override long get() const shared @nogc nothrow
+    override long get() const shared @nogc nothrow @safe
     {
         // The array is immutable so no atomic load needed
         return getMinimumSequence(sequences);
     }
 
-    override void set(long value) shared @nogc nothrow
+    override void set(long value) shared @nogc nothrow @safe
     {
         assert(0, "unsupported");
     }
 
-    override bool compareAndSet(long expectedValue, long newValue) shared @nogc nothrow
+    override bool compareAndSet(long expectedValue, long newValue) shared @nogc nothrow @safe
     {
         assert(0, "unsupported");
     }
 
-    override long incrementAndGet() shared @nogc nothrow
+    override long incrementAndGet() shared @nogc nothrow @safe
     {
         assert(0, "unsupported");
     }
 
-    override long addAndGet(long inc) shared @nogc nothrow
+    override long addAndGet(long inc) shared @nogc nothrow @safe
     {
         assert(0, "unsupported");
     }
 
-    override string toString() const shared
+    override string toString() const shared @safe
     {
         import std.array : appender;
         import std.conv : to;
