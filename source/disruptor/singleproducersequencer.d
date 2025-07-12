@@ -26,23 +26,17 @@ public:
         super(bufferSize, waitStrategy);
     }
 
-    bool hasAvailableCapacity(int requiredCapacity)
+    override bool hasAvailableCapacity(int requiredCapacity) shared
     {
         return hasAvailableCapacity(requiredCapacity, false);
     }
 
-    override bool hasAvailableCapacity(int requiredCapacity) shared
-    {
-        return (cast(SingleProducerSequencer)this)
-            .hasAvailableCapacity(requiredCapacity);
-    }
-
 private:
-    bool hasAvailableCapacity(int requiredCapacity, bool doStore)
+    bool hasAvailableCapacity(int requiredCapacity, bool doStore) shared
     {
-        long nextValue = this.nextValue;
+        long nextValue = cast(long)this.nextValue;
         long wrapPoint = (nextValue + requiredCapacity) - bufferSize;
-        long cachedGatingSequence = this.cachedValue;
+        long cachedGatingSequence = cast(long)this.cachedValue;
 
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue)
         {
@@ -64,25 +58,20 @@ private:
     }
 
 public:
-    long next()
+    override long next() shared
     {
         return next(1);
     }
 
-    override long next() shared
-    {
-        return (cast(SingleProducerSequencer)this).next();
-    }
-
-    long next(int n)
+    override long next(int n) shared
     {
         if (n < 1 || n > bufferSize)
             throw new Exception("n must be > 0 and < bufferSize", __FILE__, __LINE__);
 
-        long nextValue = this.nextValue;
+        long nextValue = cast(long)this.nextValue;
         long nextSequence = nextValue + n;
         long wrapPoint = nextSequence - bufferSize;
-        long cachedGatingSequence = this.cachedValue;
+        long cachedGatingSequence = cast(long)this.cachedValue;
 
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue)
         {
@@ -100,22 +89,12 @@ public:
         return nextSequence;
     }
 
-    override long next(int n) shared
-    {
-        return (cast(SingleProducerSequencer)this).next(n);
-    }
-
-    long tryNext()
+    override long tryNext() shared
     {
         return tryNext(1);
     }
 
-    override long tryNext() shared
-    {
-        return (cast(SingleProducerSequencer)this).tryNext();
-    }
-
-    long tryNext(int n)
+    override long tryNext(int n) shared
     {
         if (n < 1)
             throw new Exception("n must be > 0", __FILE__, __LINE__);
@@ -123,26 +102,17 @@ public:
         if (!hasAvailableCapacity(n, true))
             throw InsufficientCapacityException.INSTANCE;
 
-        long nextSequence = this.nextValue += n;
+        long nextSequence = cast(long)this.nextValue + n;
+        this.nextValue = nextSequence;
         return nextSequence;
-    }
-
-    override long tryNext(int n) shared
-    {
-        return (cast(SingleProducerSequencer)this).tryNext(n);
-    }
-
-    long remainingCapacity()
-    {
-        long nextValue = this.nextValue;
-        long consumed = utilGetMinimumSequence(gatingSequences, nextValue);
-        long produced = nextValue;
-        return bufferSize - (produced - consumed);
     }
 
     override long remainingCapacity() shared
     {
-        return (cast(SingleProducerSequencer)this).remainingCapacity();
+        long nextValue = cast(long)this.nextValue;
+        long consumed = utilGetMinimumSequence(gatingSequences, nextValue);
+        long produced = nextValue;
+        return bufferSize - (produced - consumed);
     }
 
     override void claim(long sequence)
