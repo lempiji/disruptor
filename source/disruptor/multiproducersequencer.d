@@ -30,6 +30,11 @@ public:
         indexShift = log2(bufferSize);
     }
 
+    this(int bufferSize, shared WaitStrategy waitStrategy) shared
+    {
+        this(bufferSize, waitStrategy);
+    }
+
     override bool hasAvailableCapacity(int requiredCapacity) shared
     {
         return (cast(MultiProducerSequencer)this)
@@ -182,7 +187,7 @@ unittest
     import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
 
     shared MultiProducerSequencer sequencer =
-        cast(shared) new MultiProducerSequencer(1024, new shared BlockingWaitStrategy());
+        new shared MultiProducerSequencer(1024, new shared BlockingWaitStrategy());
 
     sequencer.publish(3);
     sequencer.publish(5);
