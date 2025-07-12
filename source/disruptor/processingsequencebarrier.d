@@ -1,6 +1,6 @@
 module disruptor.processingsequencebarrier;
 
-import core.atomic;
+import core.atomic : MemoryOrder, atomicLoad, atomicStore;
 import disruptor.sequence : Sequence;
 import disruptor.fixedsequencegroup : FixedSequenceGroup;
 import disruptor.waitstrategy : WaitStrategy;

@@ -1,6 +1,6 @@
 module disruptor.multiproducersequencer;
 
-import core.atomic;
+import core.atomic : MemoryOrder, atomicLoad, atomicStore;
 import core.thread : Thread;
 import disruptor.sequence : Sequence;
 import disruptor.waitstrategy : WaitStrategy;
