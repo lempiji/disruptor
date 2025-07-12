@@ -112,7 +112,7 @@ unittest
             super(size, strategy);
         }
 
-        void setCursor(long value)
+        void setCursor(long value) shared
         {
             cursor.set(value);
         }
@@ -141,7 +141,7 @@ unittest
     assert(g1.get == seq.cursor.get());
     assert(g2.get == seq.cursor.get());
 
-    (cast(DummySequencer)seq).setCursor(7);
+    seq.setCursor(7);
 
     // Both gating sequences at initial value -> minimum equals initial value
     assert(seq.getMinimumSequence() == Sequence.INITIAL_VALUE);
