@@ -13,7 +13,8 @@ unittest
     {
         override shared(int) get(long sequence) shared
         {
-            return cast(shared(int))sequence;
+            shared int value = cast(int)sequence;
+            return value;
         }
     }
 
