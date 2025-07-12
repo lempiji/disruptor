@@ -1,6 +1,7 @@
 module disruptor.sequencer;
 
 import disruptor.sequence;
+public import disruptor.eventpoller : EventPoller;
 
 interface Cursored
 {
@@ -35,11 +36,6 @@ interface DataProvider(T)
     shared(T) get(long sequence) shared;
 }
 
-class EventPoller(T)
-{
-    // placeholder class
-}
-
 interface Sequencer : Cursored, Sequenced
 {
     enum long INITIAL_CURSOR_VALUE = -1;
@@ -51,5 +47,5 @@ interface Sequencer : Cursored, Sequenced
     shared(SequenceBarrier) newBarrier(shared Sequence[] sequencesToTrack...) shared;
     long getMinimumSequence() shared;
     long getHighestPublishedSequence(long nextSequence, long availableSequence) shared;
-    EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...);
+    EventPoller!T newPoller(T)(shared DataProvider!T provider, shared Sequence[] gatingSequences...) shared;
 }
