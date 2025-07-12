@@ -54,7 +54,7 @@ public:
     }
 
     /// Get the minimum sequence seen by gating sequences.
-    override long getMinimumSequence() @nogc nothrow
+    override long getMinimumSequence() shared @nogc nothrow
     {
         return utilGetMinimumSequence(gatingSequences, cursor.get());
     }
@@ -127,13 +127,13 @@ unittest
     (cast(DummySequencer)seq).setCursor(7);
 
     // Both gating sequences at initial value -> minimum equals initial value
-    assert((cast(DummySequencer)seq).getMinimumSequence() == Sequence.INITIAL_VALUE);
+    assert(seq.getMinimumSequence() == Sequence.INITIAL_VALUE);
 
     g1.set(5);
     g2.set(7);
-    assert((cast(DummySequencer)seq).getMinimumSequence() == 5);
+    assert(seq.getMinimumSequence() == 5);
 
     assert(seq.removeGatingSequence(g1));
     assert(!seq.removeGatingSequence(g1));
-    assert((cast(DummySequencer)seq).getMinimumSequence() == 7);
+    assert(seq.getMinimumSequence() == 7);
 }
