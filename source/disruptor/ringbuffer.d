@@ -128,7 +128,7 @@ public:
         return sequencer.removeGatingSequence(sequence);
     }
 
-    SequenceBarrier newBarrier(shared Sequence[] sequences...) shared
+    shared(SequenceBarrier) newBarrier(shared Sequence[] sequences...) shared
     {
         return sequencer.newBarrier(sequences);
     }
