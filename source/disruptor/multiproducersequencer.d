@@ -43,13 +43,7 @@ public:
 
     override bool hasAvailableCapacity(int requiredCapacity) shared
     {
-        return (cast(MultiProducerSequencer)this)
-            .hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
-    }
-
-private:
-    bool hasAvailableCapacity(shared Sequence[] gatingSequences, int requiredCapacity, long cursorValue)
-    {
+        long cursorValue = cursor.get();
         long wrapPoint = (cursorValue + requiredCapacity) - bufferSize;
         long cachedGatingSequence = gatingSequenceCache.get();
 
@@ -116,9 +110,17 @@ public:
             current = cursor.get();
             next = current + n;
 
-            if (!(cast(MultiProducerSequencer)this)
-                    .hasAvailableCapacity(gatingSequences, n, current))
-                throw InsufficientCapacityException.INSTANCE;
+            long wrapPoint = (current + n) - bufferSize;
+            long cachedGatingSequence = gatingSequenceCache.get();
+
+            if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current)
+            {
+                long minSequence = utilGetMinimumSequence(gatingSequences, current);
+                gatingSequenceCache.set(minSequence);
+
+                if (wrapPoint > minSequence)
+                    throw InsufficientCapacityException.INSTANCE;
+            }
         }
         while (!cursor.compareAndSet(current, next));
 
