@@ -12,3 +12,4 @@ public import disruptor.util;
 public import disruptor.insufficientcapacityexception;
 public import disruptor.multiproducersequencer;
 public import disruptor.singleproducersequencer;
+public import disruptor.ringbuffer;
