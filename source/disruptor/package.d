@@ -16,4 +16,5 @@ public import disruptor.eventfactory;
 public import disruptor.eventtranslator;
 public import disruptor.eventsink;
 public import disruptor.eventsequencer;
+public import disruptor.eventprocessor;
 public import disruptor.ringbuffer;
