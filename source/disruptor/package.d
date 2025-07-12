@@ -18,5 +18,6 @@ public import disruptor.eventsink;
 public import disruptor.eventsequencer;
 public import disruptor.eventprocessor;
 public import disruptor.ringbuffer;
+public import disruptor.eventpoller;
 public import disruptor.timeoutblockingwaitstrategy;
 public import disruptor.timeoutexception;
