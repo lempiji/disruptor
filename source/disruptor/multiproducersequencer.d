@@ -19,17 +19,6 @@ private:
     int indexShift;
 
 public:
-    this(int bufferSize, shared WaitStrategy waitStrategy)
-    {
-        super(bufferSize, waitStrategy);
-        gatingSequenceCache = new shared Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-        availableBuffer = new shared int[](bufferSize);
-        foreach (i; 0 .. bufferSize)
-            availableBuffer[i] = -1;
-        indexMask = bufferSize - 1;
-        indexShift = log2(bufferSize);
-    }
-
     this(int bufferSize, shared WaitStrategy waitStrategy) shared
     {
         super(bufferSize, waitStrategy);
@@ -43,12 +32,11 @@ public:
 
     override bool hasAvailableCapacity(int requiredCapacity) shared
     {
-        return (cast(MultiProducerSequencer)this)
-            .hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
+        return hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
     }
 
 private:
-    bool hasAvailableCapacity(shared Sequence[] gatingSequences, int requiredCapacity, long cursorValue)
+    bool hasAvailableCapacity(shared Sequence[] gatingSequences, int requiredCapacity, long cursorValue) shared
     {
         long wrapPoint = (cursorValue + requiredCapacity) - bufferSize;
         long cachedGatingSequence = gatingSequenceCache.get();
@@ -116,8 +104,7 @@ public:
             current = cursor.get();
             next = current + n;
 
-            if (!(cast(MultiProducerSequencer)this)
-                    .hasAvailableCapacity(gatingSequences, n, current))
+            if (!hasAvailableCapacity(gatingSequences, n, current))
                 throw InsufficientCapacityException.INSTANCE;
         }
         while (!cursor.compareAndSet(current, next));
