@@ -5,28 +5,28 @@ module disruptor.eventtranslator;
 interface EventTranslator(T)
 {
     /// Translate data into the given event for the specified sequence.
-    void translateTo(T event, long sequence);
+    void translateTo(T event, long sequence) @safe;
 }
 
 interface EventTranslatorOneArg(T, A)
 {
-    void translateTo(T event, long sequence, A arg0);
+    void translateTo(T event, long sequence, A arg0) @safe;
 }
 
 interface EventTranslatorTwoArg(T, A, B)
 {
-    void translateTo(T event, long sequence, A arg0, B arg1);
+    void translateTo(T event, long sequence, A arg0, B arg1) @safe;
 }
 
 interface EventTranslatorThreeArg(T, A, B, C)
 {
-    void translateTo(T event, long sequence, A arg0, B arg1, C arg2);
+    void translateTo(T event, long sequence, A arg0, B arg1, C arg2) @safe;
 }
 
 /// Vararg translator accepting an arbitrary list of arguments.
 interface EventTranslatorVararg(T)
 {
-    void translateTo(Args...)(T event, long sequence, Args args);
+    void translateTo(Args...)(T event, long sequence, Args args) @safe;
 }
 
 unittest
@@ -35,7 +35,7 @@ unittest
 
     class MyTranslator : EventTranslator!MyEvent
     {
-        override void translateTo(MyEvent event, long sequence)
+        override void translateTo(MyEvent event, long sequence) @safe
         {
             event.value = cast(int)sequence;
         }
@@ -48,7 +48,7 @@ unittest
 
     class MyOneArg : EventTranslatorOneArg!(MyEvent, int)
     {
-        override void translateTo(MyEvent event, long sequence, int arg0)
+        override void translateTo(MyEvent event, long sequence, int arg0) @safe
         {
             event.value = arg0;
         }
