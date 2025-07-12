@@ -21,9 +21,15 @@ public:
         super(bufferSize, waitStrategy);
     }
 
-    override bool hasAvailableCapacity(int requiredCapacity)
+    bool hasAvailableCapacity(int requiredCapacity)
     {
         return hasAvailableCapacity(requiredCapacity, false);
+    }
+
+    override bool hasAvailableCapacity(int requiredCapacity) shared
+    {
+        return (cast(SingleProducerSequencer)this)
+            .hasAvailableCapacity(requiredCapacity);
     }
 
 private:
@@ -53,12 +59,17 @@ private:
     }
 
 public:
-    override long next()
+    long next()
     {
         return next(1);
     }
 
-    override long next(int n)
+    override long next() shared
+    {
+        return (cast(SingleProducerSequencer)this).next();
+    }
+
+    long next(int n)
     {
         if (n < 1 || n > bufferSize)
             throw new Exception("n must be > 0 and < bufferSize", __FILE__, __LINE__);
@@ -84,12 +95,22 @@ public:
         return nextSequence;
     }
 
-    override long tryNext()
+    override long next(int n) shared
+    {
+        return (cast(SingleProducerSequencer)this).next(n);
+    }
+
+    long tryNext()
     {
         return tryNext(1);
     }
 
-    override long tryNext(int n)
+    override long tryNext() shared
+    {
+        return (cast(SingleProducerSequencer)this).tryNext();
+    }
+
+    long tryNext(int n)
     {
         if (n < 1)
             throw new Exception("n must be > 0", __FILE__, __LINE__);
@@ -101,12 +122,22 @@ public:
         return nextSequence;
     }
 
-    override long remainingCapacity()
+    override long tryNext(int n) shared
+    {
+        return (cast(SingleProducerSequencer)this).tryNext(n);
+    }
+
+    long remainingCapacity()
     {
         long nextValue = this.nextValue;
         long consumed = utilGetMinimumSequence(gatingSequences, nextValue);
         long produced = nextValue;
         return bufferSize - (produced - consumed);
+    }
+
+    override long remainingCapacity() shared
+    {
+        return (cast(SingleProducerSequencer)this).remainingCapacity();
     }
 
     override void claim(long sequence)
@@ -146,10 +177,10 @@ unittest
 
     foreach (i; 0 .. 32)
     {
-        auto next = (cast(SingleProducerSequencer)sequencer).next();
+        auto next = sequencer.next();
         assert(sequencer.getCursor() != next);
 
-        (cast(SingleProducerSequencer)sequencer).hasAvailableCapacity(13);
+        sequencer.hasAvailableCapacity(13);
         assert(sequencer.getCursor() != next);
 
         sequencer.publish(next);

@@ -10,12 +10,12 @@ interface Cursored
 interface Sequenced
 {
     int getBufferSize();
-    bool hasAvailableCapacity(int requiredCapacity);
-    long remainingCapacity();
-    long next();
-    long next(int n);
-    long tryNext();
-    long tryNext(int n);
+    bool hasAvailableCapacity(int requiredCapacity) shared;
+    long remainingCapacity() shared;
+    long next() shared;
+    long next(int n) shared;
+    long tryNext() shared;
+    long tryNext(int n) shared;
     void publish(long sequence) shared;
     void publish(long lo, long hi) shared;
 }
