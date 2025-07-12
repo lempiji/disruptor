@@ -113,12 +113,12 @@ unittest
         this(shared Sequence cursor) shared { this.cursor = cursor; }
         override long getCursor() shared { return cursor.get(); }
         override int getBufferSize() { return 0; }
-        override bool hasAvailableCapacity(int requiredCapacity) { return false; }
-        override long remainingCapacity() { return 0; }
-        override long next() { return 0; }
-        override long next(int n) { return 0; }
-        override long tryNext() { return 0; }
-        override long tryNext(int n) { return 0; }
+        override bool hasAvailableCapacity(int requiredCapacity) shared { return false; }
+        override long remainingCapacity() shared { return 0; }
+        override long next() shared { return 0; }
+        override long next(int n) shared { return 0; }
+        override long tryNext() shared { return 0; }
+        override long tryNext(int n) shared { return 0; }
         override void publish(long sequence) shared {}
         override void publish(long lo, long hi) shared {}
         override void claim(long sequence) {}

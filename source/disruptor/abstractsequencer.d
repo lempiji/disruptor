@@ -68,12 +68,12 @@ public:
     // Abstract methods to be provided by subclasses.
     abstract override void claim(long sequence);
     abstract override bool isAvailable(long sequence) shared;
-    abstract override bool hasAvailableCapacity(int requiredCapacity);
-    abstract override long remainingCapacity();
-    abstract override long next();
-    abstract override long next(int n);
-    abstract override long tryNext();
-    abstract override long tryNext(int n);
+    abstract override bool hasAvailableCapacity(int requiredCapacity) shared;
+    abstract override long remainingCapacity() shared;
+    abstract override long next() shared;
+    abstract override long next(int n) shared;
+    abstract override long tryNext() shared;
+    abstract override long tryNext(int n) shared;
     abstract override void publish(long sequence) shared;
     abstract override void publish(long lo, long hi) shared;
     abstract override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared;
@@ -102,12 +102,12 @@ unittest
 
         override void claim(long sequence) {}
         override bool isAvailable(long sequence) shared { return true; }
-        override bool hasAvailableCapacity(int requiredCapacity) { return true; }
-        override long remainingCapacity() { return 0; }
-        override long next() { return 0; }
-        override long next(int n) { return 0; }
-        override long tryNext() { return 0; }
-        override long tryNext(int n) { return 0; }
+        override bool hasAvailableCapacity(int requiredCapacity) shared { return true; }
+        override long remainingCapacity() shared { return 0; }
+        override long next() shared { return 0; }
+        override long next(int n) shared { return 0; }
+        override long tryNext() shared { return 0; }
+        override long tryNext(int n) shared { return 0; }
         override void publish(long sequence) shared {}
         override void publish(long lo, long hi) shared {}
         override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared { return availableSequence; }

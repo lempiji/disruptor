@@ -30,9 +30,10 @@ public:
         indexShift = log2(bufferSize);
     }
 
-    override bool hasAvailableCapacity(int requiredCapacity)
+    override bool hasAvailableCapacity(int requiredCapacity) shared
     {
-        return hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
+        return (cast(MultiProducerSequencer)this)
+            .hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
     }
 
 private:
@@ -60,12 +61,12 @@ public:
         cursor.set(sequence);
     }
 
-    override long next()
+    override long next() shared
     {
         return next(1);
     }
 
-    override long next(int n)
+    override long next(int n) shared
     {
         if (n < 1 || n > bufferSize)
             throw new Exception("n must be > 0 and < bufferSize", __FILE__, __LINE__);
@@ -87,12 +88,12 @@ public:
         return nextSequence;
     }
 
-    override long tryNext()
+    override long tryNext() shared
     {
         return tryNext(1);
     }
 
-    override long tryNext(int n)
+    override long tryNext(int n) shared
     {
         if (n < 1)
             throw new Exception("n must be > 0", __FILE__, __LINE__);
@@ -104,7 +105,8 @@ public:
             current = cursor.get();
             next = current + n;
 
-            if (!hasAvailableCapacity(gatingSequences, n, current))
+            if (!(cast(MultiProducerSequencer)this)
+                    .hasAvailableCapacity(gatingSequences, n, current))
                 throw InsufficientCapacityException.INSTANCE;
         }
         while (!cursor.compareAndSet(current, next));
@@ -112,7 +114,7 @@ public:
         return next;
     }
 
-    override long remainingCapacity()
+    override long remainingCapacity() shared
     {
         long consumed = utilGetMinimumSequence(gatingSequences, cursor.get());
         long produced = cursor.get();
@@ -179,12 +181,13 @@ unittest
 {
     import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
 
-    auto sequencer = new MultiProducerSequencer(1024, new shared BlockingWaitStrategy());
+    shared MultiProducerSequencer sequencer =
+        cast(shared) new MultiProducerSequencer(1024, new shared BlockingWaitStrategy());
 
-    (cast(shared MultiProducerSequencer)sequencer).publish(3);
-    (cast(shared MultiProducerSequencer)sequencer).publish(5);
+    sequencer.publish(3);
+    sequencer.publish(5);
 
-    auto sharedSeq = cast(shared MultiProducerSequencer)sequencer;
+    auto sharedSeq = sequencer;
     assert(!sharedSeq.isAvailable(0));
     assert(!sharedSeq.isAvailable(1));
     assert(!sharedSeq.isAvailable(2));
