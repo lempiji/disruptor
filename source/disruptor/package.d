@@ -12,3 +12,7 @@ public import disruptor.util;
 public import disruptor.insufficientcapacityexception;
 public import disruptor.multiproducersequencer;
 public import disruptor.singleproducersequencer;
+public import disruptor.eventfactory;
+public import disruptor.eventtranslator;
+public import disruptor.eventsink;
+public import disruptor.eventsequencer;
