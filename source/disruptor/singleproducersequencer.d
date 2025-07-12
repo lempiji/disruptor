@@ -1,6 +1,7 @@
 module disruptor.singleproducersequencer;
 
 import core.thread : Thread;
+import core.atomic;
 import disruptor.sequence : Sequence;
 import disruptor.waitstrategy : WaitStrategy;
 import disruptor.sequencer : Sequencer;
@@ -12,8 +13,8 @@ import disruptor.insufficientcapacityexception : InsufficientCapacityException;
 final class SingleProducerSequencer : AbstractSequencer
 {
 private:
-    long nextValue = Sequence.INITIAL_VALUE;
-    long cachedValue = Sequence.INITIAL_VALUE;
+    shared long nextValue = Sequence.INITIAL_VALUE;
+    shared long cachedValue = Sequence.INITIAL_VALUE;
 
 public:
     this(int bufferSize, shared WaitStrategy waitStrategy)
@@ -34,9 +35,9 @@ public:
 private:
     bool hasAvailableCapacity(int requiredCapacity, bool doStore) shared
     {
-        long nextValue = cast(long)this.nextValue;
+        long nextValue = atomicLoad!(MemoryOrder.acq)(this.nextValue);
         long wrapPoint = (nextValue + requiredCapacity) - bufferSize;
-        long cachedGatingSequence = cast(long)this.cachedValue;
+        long cachedGatingSequence = atomicLoad!(MemoryOrder.acq)(this.cachedValue);
 
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue)
         {
@@ -46,7 +47,7 @@ private:
             }
 
             long minSequence = utilGetMinimumSequence(gatingSequences, nextValue);
-            this.cachedValue = minSequence;
+            atomicStore!(MemoryOrder.rel)(this.cachedValue, minSequence);
 
             if (wrapPoint > minSequence)
             {
@@ -68,10 +69,10 @@ public:
         if (n < 1 || n > bufferSize)
             throw new Exception("n must be > 0 and < bufferSize", __FILE__, __LINE__);
 
-        long nextValue = cast(long)this.nextValue;
+        long nextValue = atomicLoad!(MemoryOrder.acq)(this.nextValue);
         long nextSequence = nextValue + n;
         long wrapPoint = nextSequence - bufferSize;
-        long cachedGatingSequence = cast(long)this.cachedValue;
+        long cachedGatingSequence = atomicLoad!(MemoryOrder.acq)(this.cachedValue);
 
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue)
         {
@@ -82,10 +83,10 @@ public:
             {
                 Thread.yield();
             }
-            this.cachedValue = minSequence;
+            atomicStore!(MemoryOrder.rel)(this.cachedValue, minSequence);
         }
 
-        this.nextValue = nextSequence;
+        atomicStore!(MemoryOrder.rel)(this.nextValue, nextSequence);
         return nextSequence;
     }
 
@@ -102,14 +103,13 @@ public:
         if (!hasAvailableCapacity(n, true))
             throw InsufficientCapacityException.INSTANCE;
 
-        long nextSequence = cast(long)this.nextValue + n;
-        this.nextValue = nextSequence;
+        long nextSequence = atomicOp!"+="(this.nextValue, n);
         return nextSequence;
     }
 
     override long remainingCapacity() shared
     {
-        long nextValue = cast(long)this.nextValue;
+        long nextValue = atomicLoad!(MemoryOrder.acq)(this.nextValue);
         long consumed = utilGetMinimumSequence(gatingSequences, nextValue);
         long produced = nextValue;
         return bufferSize - (produced - consumed);
@@ -117,7 +117,7 @@ public:
 
     override void claim(long sequence)
     {
-        this.nextValue = sequence;
+        atomicStore!(MemoryOrder.rel)(this.nextValue, sequence);
     }
 
     override void publish(long sequence) shared
