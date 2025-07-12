@@ -25,8 +25,10 @@ private:
     shared Sequence _dependentSequence;
     shared bool _alerted = false;
 
-    private void setup(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
-            shared Sequence cursorSequence, shared Sequence[] dependentSequences) shared
+
+public:
+    this(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
+            shared Sequence cursorSequence, shared Sequence[] dependentSequences = [])
     {
         this._sequencer = sequencer;
         this._waitStrategy = waitStrategy;
@@ -42,17 +44,21 @@ private:
         }
     }
 
-public:
-    this(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
-            shared Sequence cursorSequence, shared Sequence[] dependentSequences = [])
-    {
-        (cast(shared) this).setup(sequencer, waitStrategy, cursorSequence, dependentSequences);
-    }
-
     this(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
             shared Sequence cursorSequence, shared Sequence[] dependentSequences = []) shared
     {
-        setup(sequencer, waitStrategy, cursorSequence, dependentSequences);
+        this._sequencer = sequencer;
+        this._waitStrategy = waitStrategy;
+        this._cursorSequence = cursorSequence;
+
+        if (dependentSequences.length == 0)
+        {
+            this._dependentSequence = cursorSequence;
+        }
+        else
+        {
+            this._dependentSequence = new shared FixedSequenceGroup(dependentSequences);
+        }
     }
 
     override long waitFor(long sequence) shared
