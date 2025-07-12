@@ -4,7 +4,7 @@ module disruptor.eventfactory;
 interface EventFactory(T)
 {
     /// Create a new instance of the event.
-    T newInstance();
+    shared(T) newInstance();
 }
 
 unittest
@@ -13,9 +13,10 @@ unittest
 
     class MyFactory : EventFactory!MyEvent
     {
-        override MyEvent newInstance() { return new MyEvent(); }
+        override shared(MyEvent) newInstance() { return new shared MyEvent(); }
     }
 
     auto factory = new MyFactory();
-    assert(factory.newInstance() !is null);
+    auto evt = factory.newInstance();
+    assert(evt !is null);
 }
