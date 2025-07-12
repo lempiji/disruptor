@@ -29,6 +29,18 @@ public:
         this.cursor = new shared Sequence(Sequencer.INITIAL_CURSOR_VALUE);
     }
 
+    this(int bufferSize, shared WaitStrategy waitStrategy) shared
+    {
+        if (bufferSize < 1)
+            throw new Exception("bufferSize must not be less than 1");
+        if ((bufferSize & (bufferSize - 1)) != 0)
+            throw new Exception("bufferSize must be a power of 2");
+
+        this.bufferSize = bufferSize;
+        this.waitStrategy = waitStrategy;
+        this.cursor = new shared Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    }
+
     /// Return the current cursor value.
     override long getCursor() shared @nogc nothrow
     {
@@ -95,6 +107,11 @@ unittest
             super(size, strategy);
         }
 
+        this(int size, shared WaitStrategy strategy) shared
+        {
+            super(size, strategy);
+        }
+
         void setCursor(long value)
         {
             cursor.set(value);
@@ -115,7 +132,7 @@ unittest
     }
 
     auto strategy = new shared SleepingWaitStrategy();
-    shared DummySequencer seq = cast(shared) new DummySequencer(8, strategy);
+    shared DummySequencer seq = new shared DummySequencer(8, strategy);
 
     auto g1 = new shared Sequence();
     auto g2 = new shared Sequence();

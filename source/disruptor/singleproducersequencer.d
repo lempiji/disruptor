@@ -21,6 +21,11 @@ public:
         super(bufferSize, waitStrategy);
     }
 
+    this(int bufferSize, shared WaitStrategy waitStrategy) shared
+    {
+        super(bufferSize, waitStrategy);
+    }
+
     bool hasAvailableCapacity(int requiredCapacity)
     {
         return hasAvailableCapacity(requiredCapacity, false);
@@ -173,7 +178,7 @@ unittest
     import disruptor.yieldingwaitstrategy : YieldingWaitStrategy;
 
     shared SingleProducerSequencer sequencer =
-        cast(shared) new SingleProducerSequencer(16, new shared YieldingWaitStrategy());
+        new shared SingleProducerSequencer(16, new shared YieldingWaitStrategy());
 
     foreach (i; 0 .. 32)
     {
