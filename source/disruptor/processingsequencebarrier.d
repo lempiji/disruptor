@@ -26,7 +26,7 @@ private:
     shared bool _alerted = false;
 
     private void setup(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
-            shared Sequence cursorSequence, shared Sequence[] dependentSequences)
+            shared Sequence cursorSequence, shared Sequence[] dependentSequences) shared
     {
         this._sequencer = sequencer;
         this._waitStrategy = waitStrategy;
@@ -42,17 +42,11 @@ private:
         }
     }
 
-    private void setup(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
-            shared Sequence cursorSequence, shared Sequence[] dependentSequences) shared
-    {
-        (cast() this).setup(sequencer, waitStrategy, cursorSequence, dependentSequences);
-    }
-
 public:
     this(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
             shared Sequence cursorSequence, shared Sequence[] dependentSequences = [])
     {
-        setup(sequencer, waitStrategy, cursorSequence, dependentSequences);
+        (cast(shared) this).setup(sequencer, waitStrategy, cursorSequence, dependentSequences);
     }
 
     this(shared Sequencer sequencer, shared WaitStrategy waitStrategy,
