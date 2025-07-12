@@ -1,6 +1,6 @@
 module disruptor.sequence;
 
-import core.atomic;
+import core.atomic : MemoryOrder, atomicLoad, atomicStore, atomicOp, cas;
 import std.conv : to;
 
 /// Concurrent sequence class similar to the Java version.

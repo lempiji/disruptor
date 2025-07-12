@@ -1,6 +1,6 @@
 module disruptor.sequencegroup;
 
-import core.atomic;
+import core.atomic : MemoryOrder, cas;
 import core.internal.atomic : atomicLoad;
 import disruptor.sequence;
 import disruptor.sequencer : Cursored;
