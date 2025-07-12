@@ -71,3 +71,4 @@ unittest
 public import disruptor.blockingwaitstrategy;
 public import disruptor.sleepingwaitstrategy;
 public import disruptor.yieldingwaitstrategy;
+public import disruptor.timeoutblockingwaitstrategy;
