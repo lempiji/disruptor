@@ -154,8 +154,8 @@ unittest
         auto provider = new shared Provider(data);
 
         auto poller = sequencer.newPoller!Object(provider, gatingSequence);
-        auto obj = new Object();
-        data[0] = cast(shared Object) obj;
+        auto obj = new shared Object();
+        data[0] = obj;
 
         assert(poller.poll(handler) == PollState.IDLE);
 

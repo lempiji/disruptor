@@ -20,9 +20,9 @@ private:
     shared T[] entries;
     int indexMask;
     int bufferSize;
-    shared Sequencer sequencer;
+    shared AbstractSequencer sequencer;
 
-    this(EventFactory!T factory, int bufferSize, shared Sequencer sequencer)
+    this(EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer)
     {
         this.bufferSize = bufferSize;
         this.indexMask = bufferSize - 1;
@@ -32,7 +32,7 @@ private:
             entries[i] = factory();
     }
 
-    this(EventFactory!T factory, int bufferSize, shared Sequencer sequencer) shared
+    this(EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer) shared
     {
         this.bufferSize = bufferSize;
         this.indexMask = bufferSize - 1;
@@ -139,8 +139,7 @@ public:
 
     shared(EventPoller!T) newPoller(shared Sequence[] gatingSequences...) shared
     {
-        auto seq = cast(shared AbstractSequencer)sequencer;
-        return seq.newPoller!T(cast(shared DataProvider!T)this, gatingSequences);
+        return sequencer.newPoller!T(this, gatingSequences);
     }
 
     // EventSink implementation using translators ---------------------------------
