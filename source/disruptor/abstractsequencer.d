@@ -72,9 +72,9 @@ public:
     }
 
     /// Create a new sequence barrier tracking the given sequences.
-    override SequenceBarrier newBarrier(shared Sequence[] sequencesToTrack...) shared
+    override shared(SequenceBarrier) newBarrier(shared Sequence[] sequencesToTrack...) shared
     {
-        return new ProcessingSequenceBarrier(this, waitStrategy, cursor, sequencesToTrack);
+        return new shared ProcessingSequenceBarrier(this, waitStrategy, cursor, sequencesToTrack);
     }
 
     // Abstract methods to be provided by subclasses.
