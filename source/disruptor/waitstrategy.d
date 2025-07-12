@@ -1,4 +1,8 @@
 module disruptor.waitstrategy;
+public import disruptor.blockingwaitstrategy;
+public import disruptor.sleepingwaitstrategy;
+public import disruptor.yieldingwaitstrategy;
+public import disruptor.timeoutblockingwaitstrategy;
 
 import core.atomic : pause; // for spin loop
 import disruptor.sequence;
@@ -68,7 +72,3 @@ unittest
     t.join();
 }
 
-public import disruptor.blockingwaitstrategy;
-public import disruptor.sleepingwaitstrategy;
-public import disruptor.yieldingwaitstrategy;
-public import disruptor.timeoutblockingwaitstrategy;
