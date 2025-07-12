@@ -4,7 +4,8 @@ import core.atomic;
 import disruptor.sequence : Sequence;
 import disruptor.fixedsequencegroup : FixedSequenceGroup;
 import disruptor.waitstrategy : WaitStrategy;
-import disruptor.sequencer : Sequencer, SequenceBarrier, DataProvider, EventPoller;
+import disruptor.sequencer : Sequencer, SequenceBarrier, DataProvider;
+import disruptor.eventpoller : EventPoller;
 
 /// Exception thrown when a SequenceBarrier is alerted.
 class AlertException : Exception
@@ -134,7 +135,10 @@ unittest
         override shared(SequenceBarrier) newBarrier(shared Sequence[] sequencesToTrack...) shared { return null; }
         override long getMinimumSequence() shared { return 0; }
         override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared { return availableSequence; }
-        EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...) { return null; }
+        shared(EventPoller!T) newPoller(T)(shared DataProvider!T provider, shared Sequence[] gatingSequences...) shared
+        {
+            return null;
+        }
     }
 
     auto cursor = new shared Sequence(10);

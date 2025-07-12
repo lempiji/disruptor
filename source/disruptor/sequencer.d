@@ -35,11 +35,6 @@ interface DataProvider(T)
     shared(T) get(long sequence) shared;
 }
 
-class EventPoller(T)
-{
-    // placeholder class
-}
-
 interface Sequencer : Cursored, Sequenced
 {
     enum long INITIAL_CURSOR_VALUE = -1;

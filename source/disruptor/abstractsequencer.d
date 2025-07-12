@@ -2,7 +2,8 @@ module disruptor.abstractsequencer;
 
 import disruptor.sequence : Sequence;
 import disruptor.waitstrategy : WaitStrategy;
-import disruptor.sequencer : Sequencer, SequenceBarrier, Cursored, DataProvider, EventPoller;
+import disruptor.sequencer : Sequencer, SequenceBarrier, Cursored, DataProvider;
+import disruptor.eventpoller : EventPoller;
 import disruptor.sequencegroup : addSequences, removeSequence;
 import disruptor.processingsequencebarrier : ProcessingSequenceBarrier;
 import disruptor.util : utilGetMinimumSequence = getMinimumSequence;
@@ -89,9 +90,10 @@ public:
     abstract override void publish(long sequence) shared;
     abstract override void publish(long lo, long hi) shared;
     abstract override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared;
-    EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...)
+
+    shared(EventPoller!T) newPoller(T)(shared DataProvider!T provider, shared Sequence[] gatingSequences...) shared
     {
-        return null;
+        return EventPoller!(T).newInstance(provider, this, new shared Sequence(), cursor, gatingSequences);
     }
 }
 
@@ -128,7 +130,10 @@ unittest
         override void publish(long sequence) shared {}
         override void publish(long lo, long hi) shared {}
         override long getHighestPublishedSequence(long nextSequence, long availableSequence) shared { return availableSequence; }
-        EventPoller!T newPoller(T)(DataProvider!T provider, shared Sequence[] gatingSequences...) { return null; }
+        shared(EventPoller!T) newPoller(T)(shared DataProvider!T provider, shared Sequence[] gatingSequences...) shared
+        {
+            return super.newPoller!T(provider, gatingSequences);
+        }
     }
 
     auto strategy = new shared SleepingWaitStrategy();

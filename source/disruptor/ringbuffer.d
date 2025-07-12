@@ -1,6 +1,8 @@
 module disruptor.ringbuffer;
 
-import disruptor.sequencer : Sequencer, Sequenced, Cursored, SequenceBarrier, DataProvider, EventPoller;
+import disruptor.sequencer : Sequencer, Sequenced, Cursored, SequenceBarrier, DataProvider;
+import disruptor.eventpoller : EventPoller;
+import disruptor.abstractsequencer : AbstractSequencer;
 import disruptor.sequence : Sequence;
 import disruptor.singleproducersequencer : SingleProducerSequencer;
 import disruptor.multiproducersequencer : MultiProducerSequencer;
@@ -126,6 +128,12 @@ public:
     bool removeGatingSequence(shared Sequence sequence) shared
     {
         return sequencer.removeGatingSequence(sequence);
+    }
+
+    shared(EventPoller!T) newPoller(shared Sequence[] gatingSequences = []) shared
+    {
+        auto seq = cast(shared AbstractSequencer)sequencer;
+        return seq.newPoller!T(this, gatingSequences);
     }
 
     shared(SequenceBarrier) newBarrier(shared Sequence[] sequences...) shared
