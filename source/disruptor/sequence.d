@@ -21,43 +21,43 @@ public:
         atomicStore!(MemoryOrder.rel)(_value, initialValue);
     }
 
-    long get() const shared @nogc nothrow
+    long get() const shared @nogc nothrow @safe
     {
         return atomicLoad!(MemoryOrder.acq)(_value);
     }
 
-    void set(long v) shared @nogc nothrow
+    void set(long v) shared @nogc nothrow @safe
     {
         atomicStore!(MemoryOrder.rel)(_value, v);
     }
 
-    void setVolatile(long v) shared @nogc nothrow
+    void setVolatile(long v) shared @nogc nothrow @safe
     {
         atomicStore!()( _value, v );
     }
 
-    bool compareAndSet(long expectedValue, long newValue) shared @nogc nothrow
+    bool compareAndSet(long expectedValue, long newValue) shared @nogc nothrow @safe
     {
         return cas(&_value, expectedValue, newValue);
     }
 
-    long incrementAndGet() shared @nogc nothrow
+    long incrementAndGet() shared @nogc nothrow @safe
     {
         return atomicOp!"+="(_value, 1L);
     }
 
-    long addAndGet(long inc) shared @nogc nothrow
+    long addAndGet(long inc) shared @nogc nothrow @safe
     {
         return atomicOp!"+="(_value, inc);
     }
 
-    long getAndAdd(long inc) shared @nogc nothrow
+    long getAndAdd(long inc) shared @nogc nothrow @safe
     {
         auto result = atomicOp!"+="(_value, inc);
         return result - inc;
     }
 
-    string toString() const shared
+    string toString() const shared @safe
     {
         return get.to!string;
     }

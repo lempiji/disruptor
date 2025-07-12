@@ -7,7 +7,7 @@ import core.sync.condition : Condition;
 import disruptor.sequence : Sequence;
 
 /// Calculate the next power of two greater than or equal to x.
-int ceilingNextPowerOfTwo(int x)
+int ceilingNextPowerOfTwo(int x) @safe
 {
     if (x < 1)
         throw new Exception("x must be a positive number");
@@ -21,13 +21,13 @@ int ceilingNextPowerOfTwo(int x)
 }
 
 /// Get the minimum sequence from an array of sequences.
-long getMinimumSequence(scope const(shared Sequence)[] sequences) @nogc nothrow
+long getMinimumSequence(scope const(shared Sequence)[] sequences) @nogc nothrow @safe
 {
     return getMinimumSequence(sequences, long.max);
 }
 
 /// Get the minimum sequence from an array of sequences with a default value.
-long getMinimumSequence(scope const(shared Sequence)[] sequences, long minimum) @nogc nothrow
+long getMinimumSequence(scope const(shared Sequence)[] sequences, long minimum) @nogc nothrow @safe
 {
     auto min = minimum;
     foreach (s; sequences)
@@ -40,7 +40,7 @@ long getMinimumSequence(scope const(shared Sequence)[] sequences, long minimum) 
 }
 
 /// Extract sequences from a list of processors providing a getSequence method.
-shared Sequence[] getSequencesFor(Processors...)(Processors processors)
+shared Sequence[] getSequencesFor(Processors...)(Processors processors) @safe
         if (Processors.length > 0 && is(typeof(processors[0].getSequence()) : Sequence))
 {
     auto seqs = new shared Sequence[](processors.length);
@@ -50,7 +50,7 @@ shared Sequence[] getSequencesFor(Processors...)(Processors processors)
 }
 
 /// Integer log base 2.
-int log2(int value)
+int log2(int value) @safe
 {
     if (value < 1)
         throw new Exception("value must be a positive number");
