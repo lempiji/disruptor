@@ -18,7 +18,7 @@ private:
 
 public:
     /// Set the maximum number of events that will be processed in a batch before updating the sequence.
-    BatchEventProcessorBuilder setMaxBatchSize(int maxBatchSize)
+    BatchEventProcessorBuilder setMaxBatchSize(int maxBatchSize) @safe nothrow @nogc
     {
         _maxBatchSize = maxBatchSize;
         return this;

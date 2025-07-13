@@ -134,7 +134,7 @@ public:
         sequencer.publish(lo, hi);
     }
 
-    override int getBufferSize()
+    override int getBufferSize() @safe nothrow @nogc
     {
         return bufferSize;
     }
