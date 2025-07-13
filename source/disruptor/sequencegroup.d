@@ -74,18 +74,18 @@ private:
     align(16) shared Sequence[] sequences = [];
 
 public:
-    this() shared
+    this() shared @safe nothrow
     {
         super(Sequence.INITIAL_VALUE);
     }
 
-    override long get() const shared @nogc nothrow
+    override long get() const shared @nogc nothrow @safe
     {
         auto seqs = atomicLoad!(MemoryOrder.acq)(&sequences);
         return getMinimumSequence(seqs);
     }
 
-    override void set(long value) shared @nogc nothrow
+    override void set(long value) shared @nogc nothrow @safe
     {
         auto seqs = atomicLoad!(MemoryOrder.acq)(&sequences);
         foreach (s; seqs)
@@ -112,7 +112,7 @@ public:
         return removeSequence(&sequences, sequence);
     }
 
-    int size() const shared @nogc nothrow
+    int size() const shared @nogc nothrow @safe
     {
         return cast(int) atomicLoad!(MemoryOrder.acq)(&sequences).length;
     }

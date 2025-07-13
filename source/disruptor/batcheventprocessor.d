@@ -15,6 +15,7 @@ import disruptor.simplebatchrewindstrategy : SimpleBatchRewindStrategy;
 import disruptor.rewindaction : RewindAction;
 import disruptor.rewindableeventhandler : RewindableEventHandler;
 import disruptor.eventhandler : EventHandler, EventHandlerBase;
+import disruptor.exceptionhandlers : ExceptionHandlers;
 
 /// Callback handler for uncaught exceptions in the event loop.
 interface ExceptionHandler(T)
@@ -68,7 +69,7 @@ public:
         this._sequenceBarrier = sequenceBarrier;
         this._eventHandler = eventHandler;
         this._sequence = new shared Sequence(Sequence.INITIAL_VALUE);
-        this._exceptionHandler = new shared IgnoreExceptionHandler!T();
+        this._exceptionHandler = null;
         if (maxBatchSize < 1)
             throw new Exception("maxBatchSize must be greater than 0", __FILE__, __LINE__);
         this._batchLimitOffset = maxBatchSize - 1;
@@ -127,8 +128,11 @@ public:
         int expected = RunningState.IDLE;
         if (!cas(&_running, expected, RunningState.RUNNING))
         {
-            if (expected == RunningState.RUNNING)
+            auto state = atomicLoad!(MemoryOrder.acq)(_running);
+            if (state == RunningState.RUNNING)
                 throw new Exception("Thread is already running", __FILE__, __LINE__);
+            else if (state == RunningState.HALTED)
+                return;
             else
             {
                 notifyStart();
@@ -244,17 +248,23 @@ private:
 
     void handleEventException(Throwable ex, long sequence, shared(T) event) shared
     {
-        _exceptionHandler.handleEventException(ex, sequence, event);
+        getExceptionHandler().handleEventException(ex, sequence, event);
     }
 
     void handleOnStartException(Throwable ex) shared
     {
-        _exceptionHandler.handleOnStartException(ex);
+        getExceptionHandler().handleOnStartException(ex);
     }
 
     void handleOnShutdownException(Throwable ex) shared
     {
-        _exceptionHandler.handleOnShutdownException(ex);
+        getExceptionHandler().handleOnShutdownException(ex);
+    }
+
+    shared(ExceptionHandler!T) getExceptionHandler() shared
+    {
+        auto handler = _exceptionHandler;
+        return handler is null ? ExceptionHandlers.defaultHandler!T() : handler;
     }
 
     static class TryRewindHandler : RewindHandler
@@ -399,7 +409,7 @@ unittest
             }
         }
 
-        override void onBatchStart(long batchSize, long queueDepth) shared
+        override void onBatchStart(long batchSize, long queueDepth) shared @safe nothrow
         {
             current = [];
             announcedBatchSizes ~= batchSize;
@@ -469,4 +479,65 @@ unittest
     t.join();
 
     assert(handler.calls == 2);
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+    import core.thread : Thread;
+    import core.time : msecs;
+
+    class StubEvent { int value; }
+
+    class DummyHandler : EventHandlerBase!StubEvent
+    {
+        override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared {}
+    }
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    auto barrier = rb.newBarrier();
+    auto handler = new shared DummyHandler();
+    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
+    rb.addGatingSequences(processor.getSequence());
+    rb.publish(rb.next());
+
+    auto t = new Thread({ processor.run(); });
+    t.start();
+    Thread.sleep(50.msecs);
+    bool threw = false;
+    try { processor.run(); } catch (Exception) { threw = true; }
+    assert(threw);
+    processor.halt();
+    t.join();
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+
+    class StubEvent { int value; }
+
+    class CountingHandler : EventHandlerBase!StubEvent
+    {
+        shared int count;
+        override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
+        {
+            import core.atomic : atomicOp;
+            atomicOp!"+="(count, 1);
+        }
+    }
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    auto barrier = rb.newBarrier();
+    auto handler = new shared CountingHandler();
+    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
+    rb.addGatingSequences(processor.getSequence());
+
+    processor.halt();
+    rb.publish(rb.next());
+
+    processor.run();
+
+    assert(handler.count == 0);
+    assert(processor.getSequence().get == Sequence.INITIAL_VALUE);
 }
