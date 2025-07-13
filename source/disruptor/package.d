@@ -17,6 +17,7 @@ public import disruptor.eventtranslator;
 public import disruptor.eventsink;
 public import disruptor.eventsequencer;
 public import disruptor.eventprocessor;
+public import disruptor.noopeventprocessor;
 public import disruptor.batcheventprocessor;
 public import disruptor.ringbuffer;
 public import disruptor.producertype;
