@@ -310,6 +310,7 @@ unittest
 
     class CountingHandler : EventHandlerBase!StubEvent
     {
+        this() shared {}
         shared int count;
         override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
         {
@@ -347,6 +348,7 @@ unittest
 
     class ExceptionThrower : EventHandlerBase!StubEvent
     {
+        this() shared {}
         override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
         {
             throw new Exception("boom");
@@ -355,6 +357,7 @@ unittest
 
     class LatchExceptionHandler : ExceptionHandler!StubEvent
     {
+        this() shared {}
         shared int calls;
         override void handleEventException(Throwable ex, long sequence, shared(StubEvent) event) shared
         {
@@ -394,6 +397,7 @@ unittest
 
     class BatchLimitRecordingHandler : EventHandlerBase!StubEvent
     {
+        this() shared {}
         long[][] batchedSequences;
         long[] announcedBatchSizes;
         long[] announcedQueueDepths;
@@ -419,8 +423,8 @@ unittest
 
     auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 16, new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
-    auto handler = new BatchLimitRecordingHandler();
-    auto processor = BatchEventProcessor!StubEvent.newInstance(rb, barrier, cast(shared)handler, MAX_BATCH_SIZE);
+    auto handler = new shared BatchLimitRecordingHandler();
+    auto processor = BatchEventProcessor!StubEvent.newInstance(rb, barrier, handler, MAX_BATCH_SIZE);
     rb.addGatingSequences(processor.getSequence());
 
     // publish events
@@ -433,11 +437,12 @@ unittest
     processor.halt();
     t.join();
 
-    assert(handler.batchedSequences.length == 2);
-    assert(handler.batchedSequences[0] == [0L, 1L, 2L]);
-    assert(handler.batchedSequences[1] == [3L, 4L]);
-    assert(handler.announcedBatchSizes == [3L, 2L]);
-    assert(handler.announcedQueueDepths == [5L, 2L]);
+    auto h = cast(BatchLimitRecordingHandler)handler;
+    assert(h.batchedSequences.length == 2);
+    assert(h.batchedSequences[0] == [0L, 1L, 2L]);
+    assert(h.batchedSequences[1] == [3L, 4L]);
+    assert(h.announcedBatchSizes == [3L, 2L]);
+    assert(h.announcedQueueDepths == [5L, 2L]);
 }
 
 unittest
@@ -450,6 +455,7 @@ unittest
 
     class RewindingHandler : RewindableEventHandler!StubEvent
     {
+        this() shared {}
         shared BatchEventProcessor!StubEvent processor;
         shared int calls;
 
@@ -467,7 +473,7 @@ unittest
     auto handler = new shared RewindingHandler();
     auto processor = BatchEventProcessor!StubEvent.newInstance(cast(shared DataProvider!StubEvent)rb,
                                                                barrier,
-                                                               cast(shared)handler,
+                                                               handler,
                                                                16,
                                                                new shared SimpleBatchRewindStrategy());
     handler.processor = processor;
@@ -491,6 +497,7 @@ unittest
 
     class DummyHandler : EventHandlerBase!StubEvent
     {
+        this() shared {}
         override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared {}
     }
 
@@ -519,6 +526,7 @@ unittest
 
     class CountingHandler : EventHandlerBase!StubEvent
     {
+        this() shared {}
         shared int count;
         override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
         {
