@@ -35,7 +35,7 @@ public:
     this(shared DataProvider!T dataProvider,
          shared Sequencer sequencer,
          shared Sequence sequence,
-         shared Sequence gatingSequence)
+         shared Sequence gatingSequence) @safe nothrow
     {
         this.dataProvider = dataProvider;
         this.sequencer = sequencer;
@@ -46,7 +46,7 @@ public:
     this(shared DataProvider!T dataProvider,
          shared Sequencer sequencer,
          shared Sequence sequence,
-         shared Sequence gatingSequence) shared
+         shared Sequence gatingSequence) shared @safe nothrow
     {
         this.dataProvider = dataProvider;
         this.sequencer = sequencer;
@@ -100,7 +100,7 @@ public:
                                             shared Sequencer sequencer,
                                             shared Sequence sequence,
                                             shared Sequence cursorSequence,
-                                            shared Sequence[] gatingSequences = [])
+                                            shared Sequence[] gatingSequences = []) @safe
     {
         shared Sequence gate;
         if (gatingSequences.length == 0)
@@ -119,7 +119,7 @@ public:
         return new shared EventPoller!T(dataProvider, sequencer, sequence, gate);
     }
 
-    shared(Sequence) getSequence() shared
+    shared(Sequence) getSequence() shared @safe nothrow
     {
         return sequence;
     }

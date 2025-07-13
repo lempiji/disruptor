@@ -14,22 +14,22 @@ abstract class EventHandlerBase(T) : EventHandlerIdentity
     abstract void onEvent(T event, long sequence, bool endOfBatch) shared;
 
     /// Invoked by a BatchEventProcessor prior to processing a batch of events.
-    void onBatchStart(long batchSize, long queueDepth) shared
+    void onBatchStart(long batchSize, long queueDepth) shared @safe nothrow
     {
     }
 
     /// Called once on thread start before first event is available.
-    void onStart() shared
+    void onStart() shared @safe nothrow
     {
     }
 
     /// Called once just before the event processing thread is shutdown.
-    void onShutdown() shared
+    void onShutdown() shared @safe nothrow
     {
     }
 
     /// Invoked when a WaitStrategy times out.
-    void onTimeout(long sequence) shared
+    void onTimeout(long sequence) shared @safe nothrow
     {
     }
 }
@@ -41,7 +41,7 @@ abstract class EventHandler(T) : EventHandlerBase!T
     override abstract void onEvent(T event, long sequence, bool endOfBatch) shared;
 
     /// Callback allowing the handler to notify when it has finished consuming an event.
-    void setSequenceCallback(shared Sequence sequenceCallback) shared
+    void setSequenceCallback(shared Sequence sequenceCallback) shared @safe nothrow
     {
     }
 }

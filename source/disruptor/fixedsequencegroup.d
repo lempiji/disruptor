@@ -10,7 +10,7 @@ private:
     shared Sequence[] sequences;
 
 public:
-    this(shared Sequence[] sequences) shared
+    this(shared Sequence[] sequences) shared @safe
     {
         super(Sequence.INITIAL_VALUE);
         // copy the array so callers cannot modify it
