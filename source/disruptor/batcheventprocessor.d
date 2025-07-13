@@ -1,6 +1,7 @@
 module disruptor.batcheventprocessor;
 
 import core.atomic : MemoryOrder, atomicLoad, atomicStore, cas;
+import std.algorithm : min;
 import disruptor.sequence : Sequence;
 import disruptor.sequencer : DataProvider, SequenceBarrier;
 import disruptor.eventprocessor : EventProcessor;
@@ -63,28 +64,37 @@ private:
     shared Sequence _sequence;
     shared(ExceptionHandler!T) _exceptionHandler;
     shared int _running = RunningState.IDLE;
+    shared int _batchLimitOffset;
 
 public:
     this(shared DataProvider!T dataProvider,
          shared SequenceBarrier sequenceBarrier,
-         shared EventHandler!T eventHandler)
+         shared EventHandler!T eventHandler,
+         int maxBatchSize)
     {
         this._dataProvider = dataProvider;
         this._sequenceBarrier = sequenceBarrier;
         this._eventHandler = eventHandler;
         this._sequence = new shared Sequence(Sequence.INITIAL_VALUE);
         this._exceptionHandler = new shared IgnoreExceptionHandler!T();
+        if (maxBatchSize < 1)
+            throw new Exception("maxBatchSize must be greater than 0", __FILE__, __LINE__);
+        this._batchLimitOffset = maxBatchSize - 1;
     }
 
     this(shared DataProvider!T dataProvider,
          shared SequenceBarrier sequenceBarrier,
-         shared EventHandler!T eventHandler) shared
+         shared EventHandler!T eventHandler,
+         int maxBatchSize) shared
     {
         this._dataProvider = dataProvider;
         this._sequenceBarrier = sequenceBarrier;
         this._eventHandler = eventHandler;
         this._sequence = new shared Sequence(Sequence.INITIAL_VALUE);
         this._exceptionHandler = new shared IgnoreExceptionHandler!T();
+        if (maxBatchSize < 1)
+            throw new Exception("maxBatchSize must be greater than 0", __FILE__, __LINE__);
+        this._batchLimitOffset = maxBatchSize - 1;
     }
 
     override shared(Sequence) getSequence() shared
@@ -151,15 +161,22 @@ private:
             try
             {
                 long availableSequence = _sequenceBarrier.waitFor(nextSequence);
-                _eventHandler.onBatchStart(availableSequence - nextSequence + 1,
-                                          availableSequence - nextSequence + 1);
-                while (nextSequence <= availableSequence)
+                long endOfBatchSequence = min(nextSequence + _batchLimitOffset, availableSequence);
+
+                if (nextSequence <= endOfBatchSequence)
+                {
+                    _eventHandler.onBatchStart(endOfBatchSequence - nextSequence + 1,
+                                              availableSequence - nextSequence + 1);
+                }
+
+                while (nextSequence <= endOfBatchSequence)
                 {
                     event = _dataProvider.get(nextSequence);
-                    _eventHandler.onEvent(event, nextSequence, nextSequence == availableSequence);
+                    _eventHandler.onEvent(event, nextSequence, nextSequence == endOfBatchSequence);
                     nextSequence++;
                 }
-                _sequence.set(availableSequence);
+
+                _sequence.set(endOfBatchSequence);
             }
             catch (TimeoutException)
             {
@@ -252,7 +269,7 @@ unittest
     auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared CountingHandler();
-    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler);
+    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
     rb.addGatingSequences(processor.getSequence());
 
     // publish events
@@ -299,7 +316,7 @@ unittest
     auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared ExceptionThrower();
-    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler);
+    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
     auto exc = new shared LatchExceptionHandler();
     processor.setExceptionHandler(exc);
     rb.addGatingSequences(processor.getSequence());
@@ -310,4 +327,63 @@ unittest
     processor.halt();
     t.join();
     assert(exc.calls == 1);
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+    import core.thread : Thread;
+    import core.time : msecs;
+
+    enum MAX_BATCH_SIZE = 3;
+    enum PUBLISH_COUNT = 5;
+
+    class StubEvent { int value; }
+
+    class BatchLimitRecordingHandler : EventHandlerBase!StubEvent
+    {
+        long[][] batchedSequences;
+        long[] announcedBatchSizes;
+        long[] announcedQueueDepths;
+        long[] current;
+
+        override void onEvent(shared(StubEvent) evt, long seq, bool endOfBatch) shared
+        {
+            current ~= seq;
+            if (endOfBatch)
+            {
+                batchedSequences ~= current;
+                current = null;
+            }
+        }
+
+        override void onBatchStart(long batchSize, long queueDepth) shared
+        {
+            current = [];
+            announcedBatchSizes ~= batchSize;
+            announcedQueueDepths ~= queueDepth;
+        }
+    }
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 16, new shared BlockingWaitStrategy());
+    auto barrier = rb.newBarrier();
+    auto handler = new BatchLimitRecordingHandler();
+    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, cast(shared)handler, MAX_BATCH_SIZE);
+    rb.addGatingSequences(processor.getSequence());
+
+    // publish events
+    foreach(i; 0 .. PUBLISH_COUNT)
+        rb.publish(rb.next());
+
+    auto t = new Thread({ processor.run(); });
+    t.start();
+    Thread.sleep(100.msecs);
+    processor.halt();
+    t.join();
+
+    assert(handler.batchedSequences.length == 2);
+    assert(handler.batchedSequences[0] == [0L, 1L, 2L]);
+    assert(handler.batchedSequences[1] == [3L, 4L]);
+    assert(handler.announcedBatchSizes == [3L, 2L]);
+    assert(handler.announcedQueueDepths == [5L, 2L]);
 }
