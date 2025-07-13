@@ -132,7 +132,11 @@ public:
             if (state == RunningState.RUNNING)
                 throw new Exception("Thread is already running", __FILE__, __LINE__);
             else if (state == RunningState.HALTED)
+            {
+                notifyStart();
+                notifyShutdown();
                 return;
+            }
             else
             {
                 notifyStart();
