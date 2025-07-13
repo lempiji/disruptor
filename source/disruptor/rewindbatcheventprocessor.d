@@ -183,7 +183,7 @@ unittest
     class CountingStrategy : BatchRewindStrategy
     {
         int count;
-        override RewindAction handleRewindException(RewindableException e, int attempts) shared
+        override RewindAction handleRewindException(RewindableException e, int attempts) shared @safe nothrow
         {
             atomicOp!"+="(count, 1);
             return RewindAction.REWIND;

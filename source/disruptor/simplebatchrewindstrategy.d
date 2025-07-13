@@ -7,7 +7,7 @@ import disruptor.rewindaction : RewindAction;
 /// Batch rewind strategy that always rewinds.
 class SimpleBatchRewindStrategy : BatchRewindStrategy
 {
-    override RewindAction handleRewindException(RewindableException e, int attempts) shared
+    override RewindAction handleRewindException(RewindableException e, int attempts) shared @safe nothrow
     {
         return RewindAction.REWIND;
     }
