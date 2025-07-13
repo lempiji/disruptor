@@ -10,10 +10,10 @@ import disruptor.waitstrategy : WaitStrategy, BlockingWaitStrategy;
 import disruptor.insufficientcapacityexception : InsufficientCapacityException;
 import disruptor.eventsink : EventSink;
 import disruptor.eventtranslator;
+import disruptor.eventfactory : EventFactory;
 import std.conv : to;
 
 /// Simple ring buffer backed by an array and a Sequencer.
-alias EventFactory(T) = shared(T) delegate();
 
 class RingBuffer(T) : DataProvider!T, Sequenced, Cursored, EventSink!T
 {
@@ -24,7 +24,7 @@ private:
     int bufferSize;
     shared AbstractSequencer sequencer;
 
-    this(EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer)
+    this(shared EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer)
     {
         if (bufferSize < 1)
             throw new Exception("bufferSize must not be less than 1");
@@ -36,10 +36,10 @@ private:
         this.sequencer = sequencer;
         entries = new shared T[](bufferSize + 2 * BUFFER_PAD);
         foreach (i; 0 .. bufferSize)
-            entries[BUFFER_PAD + i] = factory();
+            entries[BUFFER_PAD + i] = factory.newInstance();
     }
 
-    this(EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer) shared
+    this(shared EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer) shared
     {
         if (bufferSize < 1)
             throw new Exception("bufferSize must not be less than 1");
@@ -51,7 +51,7 @@ private:
         this.sequencer = sequencer;
         entries = new shared T[](bufferSize + 2 * BUFFER_PAD);
         foreach (i; 0 .. bufferSize)
-            entries[BUFFER_PAD + i] = factory();
+            entries[BUFFER_PAD + i] = factory.newInstance();
     }
 
     shared(T) elementAt(long sequence) shared nothrow @safe
@@ -61,21 +61,21 @@ private:
 
 public:
     /// Create a ring buffer for a single producer.
-    static shared(RingBuffer!T) createSingleProducer(EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
+    static shared(RingBuffer!T) createSingleProducer(shared EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
     {
         auto seq = new shared SingleProducerSequencer(bufferSize, waitStrategy);
         return new shared RingBuffer!T(factory, bufferSize, seq);
     }
 
     /// Create a ring buffer for multiple producers.
-    static shared(RingBuffer!T) createMultiProducer(EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
+    static shared(RingBuffer!T) createMultiProducer(shared EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
     {
         auto seq = new shared MultiProducerSequencer(bufferSize, waitStrategy);
         return new shared RingBuffer!T(factory, bufferSize, seq);
     }
 
     /// Create a ring buffer with the given producer type.
-    static shared(RingBuffer!T) create(ProducerType producerType, EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
+    static shared(RingBuffer!T) create(ProducerType producerType, shared EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
     {
         final switch (producerType)
         {
@@ -633,7 +633,12 @@ unittest
         long value;
     }
 
-    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        4,
+        new shared BlockingWaitStrategy());
     auto seq = rb.next();
     auto evt = rb.get(seq);
     (cast(StubEvent) evt).value = 42;
@@ -656,7 +661,12 @@ unittest
         long value;
     }
 
-    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 8, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        8,
+        new shared BlockingWaitStrategy());
 
     assert(rb.getCursor() == -1);
 
@@ -687,7 +697,12 @@ unittest
         }
     }
 
-    auto rb = RingBuffer!StubEvent.createMultiProducer(() => new shared StubEvent(), 32, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createMultiProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        32,
+        new shared BlockingWaitStrategy());
     rb.addGatingSequences(new shared Sequence());
 
     auto t = new MyTranslator();
@@ -697,7 +712,10 @@ unittest
     assert(rb.get(0).value == 0 + 29);
     assert(rb.get(1).value == 1 + 29);
 
-    auto rb2 = RingBuffer!StubEvent.createMultiProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    auto rb2 = RingBuffer!StubEvent.createMultiProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        4,
+        new shared BlockingWaitStrategy());
     rb2.addGatingSequences(new shared Sequence());
 
     foreach (i; 0 .. 4)
@@ -719,16 +737,26 @@ unittest
         long value;
     }
 
-    auto factory = () => new shared StubEvent();
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto factory = makeEventFactory!StubEvent(() => new shared StubEvent());
     auto ws = new shared BlockingWaitStrategy();
 
-    auto single = RingBuffer!StubEvent.create(ProducerType.SINGLE, factory, 4, ws);
+    auto single = RingBuffer!StubEvent.create(
+        ProducerType.SINGLE,
+        factory,
+        4,
+        ws);
     auto seq = single.next();
     (cast(StubEvent)single.get(seq)).value = 3;
     single.publish(seq);
     assert(single.get(seq).value == 3);
 
-    auto multi = RingBuffer!StubEvent.create(ProducerType.MULTI, factory, 8, ws);
+    auto multi = RingBuffer!StubEvent.create(
+        ProducerType.MULTI,
+        factory,
+        8,
+        ws);
     seq = multi.next();
     (cast(StubEvent)multi.get(seq)).value = 5;
     multi.publish(seq);
@@ -745,7 +773,9 @@ unittest
         long value;
     }
 
-    auto factory = () => new shared StubEvent();
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto factory = makeEventFactory!StubEvent(() => new shared StubEvent());
     auto ws = new shared BlockingWaitStrategy();
 
     assertThrown!Exception(RingBuffer!StubEvent.createSingleProducer(factory, 0, ws));
