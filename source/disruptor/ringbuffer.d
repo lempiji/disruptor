@@ -17,6 +17,7 @@ alias EventFactory(T) = shared(T) delegate();
 class RingBuffer(T) : DataProvider!T, Sequenced, Cursored, EventSink!T
 {
 private:
+    enum int BUFFER_PAD = 32;
     shared T[] entries;
     int indexMask;
     int bufferSize;
@@ -32,9 +33,9 @@ private:
         this.bufferSize = bufferSize;
         this.indexMask = bufferSize - 1;
         this.sequencer = sequencer;
-        entries = new shared T[](bufferSize);
+        entries = new shared T[](bufferSize + 2 * BUFFER_PAD);
         foreach (i; 0 .. bufferSize)
-            entries[i] = factory();
+            entries[BUFFER_PAD + i] = factory();
     }
 
     this(EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer) shared
@@ -47,9 +48,14 @@ private:
         this.bufferSize = bufferSize;
         this.indexMask = bufferSize - 1;
         this.sequencer = sequencer;
-        entries = new shared T[](bufferSize);
+        entries = new shared T[](bufferSize + 2 * BUFFER_PAD);
         foreach (i; 0 .. bufferSize)
-            entries[i] = factory();
+            entries[BUFFER_PAD + i] = factory();
+    }
+
+    shared(T) elementAt(long sequence) shared nothrow
+    {
+        return entries[BUFFER_PAD + cast(size_t)(sequence & indexMask)];
     }
 
 public:
@@ -69,7 +75,7 @@ public:
 
     override shared(T) get(long sequence) shared nothrow
     {
-        return entries[cast(size_t)(sequence & indexMask)];
+        return elementAt(sequence);
     }
 
     override long next() shared
