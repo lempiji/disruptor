@@ -10,6 +10,7 @@ public import disruptor.processingsequencebarrier;
 public import disruptor.waitstrategy;
 public import disruptor.util;
 public import disruptor.insufficientcapacityexception;
+public import disruptor.alertexception;
 public import disruptor.multiproducersequencer;
 public import disruptor.singleproducersequencer;
 public import disruptor.eventfactory;

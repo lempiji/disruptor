@@ -6,7 +6,7 @@ import disruptor.sequence : Sequence;
 import disruptor.sequencer : DataProvider, SequenceBarrier;
 import disruptor.eventprocessor : EventProcessor;
 import disruptor.timeoutexception : TimeoutException;
-import disruptor.processingsequencebarrier : AlertException;
+import disruptor.alertexception : AlertException;
 import disruptor.ringbuffer : RingBuffer; // for unittests
 import disruptor.rewindableexception : RewindableException;
 import disruptor.rewindhandler : RewindHandler;
