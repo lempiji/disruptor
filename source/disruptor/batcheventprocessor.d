@@ -411,7 +411,7 @@ unittest
             }
         }
 
-        override void onBatchStart(long batchSize, long queueDepth) shared
+        override void onBatchStart(long batchSize, long queueDepth) shared @safe nothrow
         {
             current = [];
             announcedBatchSizes ~= batchSize;

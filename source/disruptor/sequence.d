@@ -16,7 +16,7 @@ private:
     long[7] _pad2 = 0;
 
 public:
-    this(long initialValue = INITIAL_VALUE) shared
+    this(long initialValue = INITIAL_VALUE) shared @safe nothrow
     {
         atomicStore!(MemoryOrder.rel)(_value, initialValue);
     }

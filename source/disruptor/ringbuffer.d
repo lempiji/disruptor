@@ -54,7 +54,7 @@ private:
             entries[BUFFER_PAD + i] = factory();
     }
 
-    shared(T) elementAt(long sequence) shared nothrow
+    shared(T) elementAt(long sequence) shared nothrow @safe
     {
         return entries[BUFFER_PAD + cast(size_t)(sequence & indexMask)];
     }
