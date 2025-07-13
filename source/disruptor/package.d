@@ -44,3 +44,4 @@ public import disruptor.rewindbatcheventprocessor;
 public import disruptor.fatalexceptionhandler;
 public import disruptor.exceptionhandlers;
 public import disruptor.batcheventprocessorbuilder;
+public import disruptor.aggregateeventhandler;
