@@ -1,6 +1,6 @@
 module disruptor.multiproducersequencer;
 
-import core.atomic : MemoryOrder, atomicLoad, atomicStore;
+import core.atomic : MemoryOrder, atomicLoad, atomicStore, pause;
 import core.thread : Thread;
 import disruptor.sequence : Sequence;
 import disruptor.waitstrategy : WaitStrategy;
@@ -80,7 +80,7 @@ public:
             long gatingSequence;
             while (wrapPoint > (gatingSequence = utilGetMinimumSequence(gatingSequences, current)))
             {
-                Thread.yield();
+                pause();
             }
             gatingSequenceCache.set(gatingSequence);
         }
