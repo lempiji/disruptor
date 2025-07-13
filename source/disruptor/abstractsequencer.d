@@ -78,7 +78,7 @@ public:
     }
 
     // Abstract methods to be provided by subclasses.
-    abstract override void claim(long sequence);
+    abstract override void claim(long sequence) shared;
     abstract override bool isAvailable(long sequence) shared;
     abstract override bool hasAvailableCapacity(int requiredCapacity) shared;
     abstract override long remainingCapacity() shared;
@@ -117,7 +117,7 @@ unittest
             cursor.set(value);
         }
 
-        override void claim(long sequence) {}
+        override void claim(long sequence) shared {}
         override bool isAvailable(long sequence) shared { return true; }
         override bool hasAvailableCapacity(int requiredCapacity) shared { return true; }
         override long remainingCapacity() shared { return 0; }

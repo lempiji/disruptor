@@ -92,6 +92,16 @@ public:
         return sequencer.tryNext(n);
     }
 
+    /**
+     * Claim a specific sequence and return the preallocated entry.
+     * The cursor will only advance when the sequence is subsequently published.
+     */
+    shared(T) claimAndGetPreallocated(long sequence) shared
+    {
+        sequencer.claim(sequence);
+        return get(sequence);
+    }
+
     override void publish(long sequence) shared
     {
         sequencer.publish(sequence);
@@ -615,6 +625,29 @@ unittest
     auto g2 = new shared Sequence();
     rb.addGatingSequences(g1, g2);
     assert(rb.removeGatingSequence(g1));
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+
+    class StubEvent
+    {
+        long value;
+    }
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 8, new shared BlockingWaitStrategy());
+
+    assert(rb.getCursor() == -1);
+
+    auto ev = rb.claimAndGetPreallocated(0);
+    assert(rb.getCursor() == -1);
+
+    (cast(StubEvent)ev).value = 7;
+    rb.publish(0);
+
+    assert(rb.getCursor() == 0);
+    assert(rb.get(0).value == 7);
 }
 
 unittest

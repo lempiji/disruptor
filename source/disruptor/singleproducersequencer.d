@@ -115,7 +115,7 @@ public:
         return bufferSize - (produced - consumed);
     }
 
-    override void claim(long sequence)
+    override void claim(long sequence) shared
     {
         atomicStore!(MemoryOrder.rel)(this.nextValue, sequence);
     }

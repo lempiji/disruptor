@@ -55,7 +55,7 @@ private:
     }
 
 public:
-    override void claim(long sequence)
+    override void claim(long sequence) shared
     {
         cursor.set(sequence);
     }
