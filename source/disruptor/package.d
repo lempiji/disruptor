@@ -25,3 +25,6 @@ public import disruptor.timeoutexception;
 public import disruptor.eventhandler;
 public import disruptor.rewindableeventhandler;
 public import disruptor.rewindableexception;
+public import disruptor.rewindaction;
+public import disruptor.batchrewindstrategy;
+public import disruptor.simplebatchrewindstrategy;
