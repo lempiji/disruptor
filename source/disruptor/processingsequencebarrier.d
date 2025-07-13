@@ -127,7 +127,7 @@ unittest
         override long tryNext(int n) shared { return 0; }
         override void publish(long sequence) shared {}
         override void publish(long lo, long hi) shared {}
-        override void claim(long sequence) {}
+        override void claim(long sequence) shared {}
         override bool isAvailable(long sequence) shared { return false; }
         override void addGatingSequences(shared Sequence[] gatingSequences...) shared {}
         override bool removeGatingSequence(shared Sequence sequence) shared { return false; }

@@ -41,7 +41,7 @@ interface Sequencer : Cursored, Sequenced
 {
     enum long INITIAL_CURSOR_VALUE = -1;
 
-    void claim(long sequence);
+    void claim(long sequence) shared;
     bool isAvailable(long sequence) shared;
     void addGatingSequences(shared Sequence[] gatingSequences...) shared;
     bool removeGatingSequence(shared Sequence sequence) shared;
