@@ -24,6 +24,11 @@ private:
 
     this(EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer)
     {
+        if (bufferSize < 1)
+            throw new Exception("bufferSize must not be less than 1");
+        if ((bufferSize & (bufferSize - 1)) != 0)
+            throw new Exception("bufferSize must be a power of 2");
+
         this.bufferSize = bufferSize;
         this.indexMask = bufferSize - 1;
         this.sequencer = sequencer;
@@ -34,6 +39,11 @@ private:
 
     this(EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer) shared
     {
+        if (bufferSize < 1)
+            throw new Exception("bufferSize must not be less than 1");
+        if ((bufferSize & (bufferSize - 1)) != 0)
+            throw new Exception("bufferSize must be a power of 2");
+
         this.bufferSize = bufferSize;
         this.indexMask = bufferSize - 1;
         this.sequencer = sequencer;
@@ -644,5 +654,24 @@ unittest
         assert(rb2.get(i).value == i + 29);
 
     assert(!rb2.tryPublishEvent(t));
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+    import std.exception : assertThrown;
+
+    class StubEvent
+    {
+        long value;
+    }
+
+    auto factory = () => new shared StubEvent();
+    auto ws = new shared BlockingWaitStrategy();
+
+    assertThrown!Exception(RingBuffer!StubEvent.createSingleProducer(factory, 0, ws));
+    assertThrown!Exception(RingBuffer!StubEvent.createSingleProducer(factory, 3, ws));
+    assertThrown!Exception(RingBuffer!StubEvent.createMultiProducer(factory, 0, ws));
+    assertThrown!Exception(RingBuffer!StubEvent.createMultiProducer(factory, 3, ws));
 }
 
