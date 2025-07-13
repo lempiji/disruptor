@@ -44,3 +44,6 @@ public import disruptor.rewindbatcheventprocessor;
 public import disruptor.fatalexceptionhandler;
 public import disruptor.exceptionhandlers;
 public import disruptor.batcheventprocessorbuilder;
+public import disruptor.threadfactory;
+public import disruptor.dsl.consumerinfo;
+public import disruptor.dsl.consumerrepository;
