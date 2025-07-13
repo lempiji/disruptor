@@ -786,3 +786,29 @@ unittest
     assertThrown!Exception(RingBuffer!StubEvent.createMultiProducer(factory, 3, ws));
 }
 
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+    import std.exception : assertThrown;
+
+    class StubEvent
+    {
+        long value;
+    }
+
+    import disruptor.eventfactory : makeEventFactory;
+    import disruptor.insufficientcapacityexception : InsufficientCapacityException;
+
+    enum int size = 4;
+    auto rb = RingBuffer!StubEvent.createMultiProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        size,
+        new shared BlockingWaitStrategy());
+    rb.addGatingSequences(new shared Sequence(size));
+
+    foreach (i; 0 .. size)
+        rb.publish(rb.tryNext());
+
+    assertThrown!InsufficientCapacityException(rb.tryNext);
+}
+
