@@ -3,6 +3,7 @@ public import disruptor.blockingwaitstrategy;
 public import disruptor.sleepingwaitstrategy;
 public import disruptor.yieldingwaitstrategy;
 public import disruptor.timeoutblockingwaitstrategy;
+public import disruptor.litetimeoutblockingwaitstrategy;
 
 import core.atomic : pause; // for spin loop
 import disruptor.sequence;
