@@ -24,33 +24,35 @@ private:
     int bufferSize;
     shared AbstractSequencer sequencer;
 
-    this(shared EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer)
+    this(shared EventFactory!T factory, shared AbstractSequencer sequencer)
     {
-        if (bufferSize < 1)
+        auto size = (cast(AbstractSequencer)sequencer).getBufferSize();
+        if (size < 1)
             throw new Exception("bufferSize must not be less than 1");
-        if ((bufferSize & (bufferSize - 1)) != 0)
+        if ((size & (size - 1)) != 0)
             throw new Exception("bufferSize must be a power of 2");
 
-        this.bufferSize = bufferSize;
-        this.indexMask = bufferSize - 1;
+        this.bufferSize = size;
+        this.indexMask = size - 1;
         this.sequencer = sequencer;
-        entries = new shared T[](bufferSize + 2 * BUFFER_PAD);
-        foreach (i; 0 .. bufferSize)
+        entries = new shared T[](size + 2 * BUFFER_PAD);
+        foreach (i; 0 .. size)
             entries[BUFFER_PAD + i] = factory.newInstance();
     }
 
-    this(shared EventFactory!T factory, int bufferSize, shared AbstractSequencer sequencer) shared
+    this(shared EventFactory!T factory, shared AbstractSequencer sequencer) shared
     {
-        if (bufferSize < 1)
+        auto size = (cast(AbstractSequencer)sequencer).getBufferSize();
+        if (size < 1)
             throw new Exception("bufferSize must not be less than 1");
-        if ((bufferSize & (bufferSize - 1)) != 0)
+        if ((size & (size - 1)) != 0)
             throw new Exception("bufferSize must be a power of 2");
 
-        this.bufferSize = bufferSize;
-        this.indexMask = bufferSize - 1;
+        this.bufferSize = size;
+        this.indexMask = size - 1;
         this.sequencer = sequencer;
-        entries = new shared T[](bufferSize + 2 * BUFFER_PAD);
-        foreach (i; 0 .. bufferSize)
+        entries = new shared T[](size + 2 * BUFFER_PAD);
+        foreach (i; 0 .. size)
             entries[BUFFER_PAD + i] = factory.newInstance();
     }
 
@@ -64,14 +66,14 @@ public:
     static shared(RingBuffer!T) createSingleProducer(shared EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
     {
         auto seq = new shared SingleProducerSequencer(bufferSize, waitStrategy);
-        return new shared RingBuffer!T(factory, bufferSize, seq);
+        return new shared RingBuffer!T(factory, seq);
     }
 
     /// Create a ring buffer for multiple producers.
     static shared(RingBuffer!T) createMultiProducer(shared EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
     {
         auto seq = new shared MultiProducerSequencer(bufferSize, waitStrategy);
-        return new shared RingBuffer!T(factory, bufferSize, seq);
+        return new shared RingBuffer!T(factory, seq);
     }
 
     /// Create a ring buffer with the given producer type.
