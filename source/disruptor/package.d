@@ -31,3 +31,5 @@ public import disruptor.batchrewindstrategy;
 public import disruptor.simplebatchrewindstrategy;
 public import disruptor.nanosecondpausebatchrewindstrategy;
 public import disruptor.eventuallygiveupbatchrewindstrategy;
+public import disruptor.fatalexceptionhandler;
+public import disruptor.exceptionhandlers;
