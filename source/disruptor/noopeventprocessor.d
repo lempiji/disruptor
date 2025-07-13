@@ -22,17 +22,17 @@ public:
         _sequence = new shared SequencerFollowingSequence(cursor);
     }
 
-    override shared(Sequence) getSequence() shared
+    override shared(Sequence) getSequence() shared @safe nothrow @nogc
     {
         return _sequence;
     }
 
-    override void halt() shared
+    override void halt() shared @safe nothrow @nogc
     {
         atomicStore!(MemoryOrder.rel)(_running, false);
     }
 
-    override bool isRunning() shared
+    override bool isRunning() shared @safe nothrow @nogc
     {
         return atomicLoad!(MemoryOrder.acq)(_running);
     }

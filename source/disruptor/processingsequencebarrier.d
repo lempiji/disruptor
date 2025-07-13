@@ -68,12 +68,12 @@ public:
         return _sequencer.getHighestPublishedSequence(sequence, availableSequence);
     }
 
-    override long getCursor() shared
+    override long getCursor() shared @safe nothrow @nogc
     {
         return _dependentSequence.get();
     }
 
-    override bool isAlerted() shared
+    override bool isAlerted() shared @safe nothrow @nogc
     {
         return atomicLoad!(MemoryOrder.acq)(_alerted);
     }
@@ -84,7 +84,7 @@ public:
         _waitStrategy.signalAllWhenBlocking();
     }
 
-    override void clearAlert() shared
+    override void clearAlert() shared @safe nothrow @nogc
     {
         atomicStore!(MemoryOrder.rel)(_alerted, false);
     }

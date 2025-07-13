@@ -30,13 +30,13 @@ public:
         indexShift = log2(bufferSize);
     }
 
-    override bool hasAvailableCapacity(int requiredCapacity) shared
+    override bool hasAvailableCapacity(int requiredCapacity) shared @safe nothrow @nogc
     {
         return hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
     }
 
 private:
-    bool hasAvailableCapacity(shared Sequence[] gatingSequences, int requiredCapacity, long cursorValue) shared
+    bool hasAvailableCapacity(shared Sequence[] gatingSequences, int requiredCapacity, long cursorValue) shared @safe nothrow @nogc
     {
         long wrapPoint = (cursorValue + requiredCapacity) - bufferSize;
         long cachedGatingSequence = gatingSequenceCache.get();
@@ -55,7 +55,7 @@ private:
     }
 
 public:
-    override void claim(long sequence) shared
+    override void claim(long sequence) shared @safe nothrow @nogc
     {
         cursor.set(sequence);
     }
@@ -112,7 +112,7 @@ public:
         return next;
     }
 
-    override long remainingCapacity() shared
+    override long remainingCapacity() shared @safe nothrow @nogc
     {
         long consumed = utilGetMinimumSequence(gatingSequences, cursor.get());
         long produced = cursor.get();
@@ -135,25 +135,25 @@ public:
     }
 
 private:
-    void setAvailable(long sequence) shared
+    void setAvailable(long sequence) shared @safe nothrow @nogc
     {
         setAvailableBufferValue(calculateIndex(sequence), calculateAvailabilityFlag(sequence));
     }
 
-    void setAvailableBufferValue(int index, int flag) shared
+    void setAvailableBufferValue(int index, int flag) shared @safe nothrow @nogc
     {
         atomicStore!(MemoryOrder.rel)(availableBuffer[index], flag);
     }
 
 public:
-    override bool isAvailable(long sequence) shared
+    override bool isAvailable(long sequence) shared @safe nothrow @nogc
     {
         int index = calculateIndex(sequence);
         int flag = calculateAvailabilityFlag(sequence);
         return atomicLoad!(MemoryOrder.acq)(availableBuffer[index]) == flag;
     }
 
-    override long getHighestPublishedSequence(long lowerBound, long availableSequence) shared
+    override long getHighestPublishedSequence(long lowerBound, long availableSequence) shared @safe nothrow @nogc
     {
         for (long sequence = lowerBound; sequence <= availableSequence; sequence++)
         {
@@ -164,12 +164,12 @@ public:
     }
 
 private:
-    int calculateAvailabilityFlag(long sequence) const shared
+    int calculateAvailabilityFlag(long sequence) const shared @safe nothrow @nogc
     {
         return cast(int)(sequence >>> indexShift);
     }
 
-    int calculateIndex(long sequence) const shared
+    int calculateIndex(long sequence) const shared @safe nothrow @nogc
     {
         return cast(int)sequence & indexMask;
     }

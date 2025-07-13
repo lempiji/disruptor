@@ -27,13 +27,13 @@ public:
         super(bufferSize, waitStrategy);
     }
 
-    override bool hasAvailableCapacity(int requiredCapacity) shared
+    override bool hasAvailableCapacity(int requiredCapacity) shared @safe nothrow @nogc
     {
         return hasAvailableCapacity(requiredCapacity, false);
     }
 
 private:
-    bool hasAvailableCapacity(int requiredCapacity, bool doStore) shared
+    bool hasAvailableCapacity(int requiredCapacity, bool doStore) shared @safe nothrow @nogc
     {
         long nextValue = atomicLoad!(MemoryOrder.acq)(this.nextValue);
         long wrapPoint = (nextValue + requiredCapacity) - bufferSize;
@@ -107,7 +107,7 @@ public:
         return nextSequence;
     }
 
-    override long remainingCapacity() shared
+    override long remainingCapacity() shared @safe nothrow @nogc
     {
         long nextValue = atomicLoad!(MemoryOrder.acq)(this.nextValue);
         long consumed = utilGetMinimumSequence(gatingSequences, nextValue);
@@ -115,7 +115,7 @@ public:
         return bufferSize - (produced - consumed);
     }
 
-    override void claim(long sequence) shared
+    override void claim(long sequence) shared @safe nothrow @nogc
     {
         atomicStore!(MemoryOrder.rel)(this.nextValue, sequence);
     }
@@ -131,13 +131,13 @@ public:
         publish(hi);
     }
 
-    override bool isAvailable(long sequence) shared
+    override bool isAvailable(long sequence) shared @safe nothrow @nogc
     {
         long currentSequence = cursor.get();
         return sequence <= currentSequence && sequence > currentSequence - bufferSize;
     }
 
-    override long getHighestPublishedSequence(long lowerBound, long availableSequence) shared
+    override long getHighestPublishedSequence(long lowerBound, long availableSequence) shared @safe nothrow @nogc
     {
         return availableSequence;
     }
