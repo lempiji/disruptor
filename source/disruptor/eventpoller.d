@@ -169,7 +169,7 @@ unittest
 
     // Test polling from a ring buffer when full
     {
-        import disruptor.eventfactory : EventFactory;
+        import disruptor.eventfactory : makeEventFactory;
 
         byte[][] events;
         class ByteHandler : Handler!(byte[])
@@ -182,7 +182,10 @@ unittest
         }
         auto handler = new ByteHandler();
 
-        auto ringBuffer = RingBuffer!(byte[]).createMultiProducer({ return new shared byte[](1); }, 4, new shared SleepingWaitStrategy());
+        auto ringBuffer = RingBuffer!(byte[]).createMultiProducer(
+            makeEventFactory!(byte[])(() => new shared byte[](1)),
+            4,
+            new shared SleepingWaitStrategy());
         auto poller = ringBuffer.newPoller();
         ringBuffer.addGatingSequences(poller.getSequence());
 

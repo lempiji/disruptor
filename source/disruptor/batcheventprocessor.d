@@ -319,7 +319,12 @@ unittest
         }
     }
 
-    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        4,
+        new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared CountingHandler();
     auto processor = BatchEventProcessor!StubEvent.newInstance(rb, barrier, handler, 16);
@@ -368,7 +373,12 @@ unittest
         override void handleOnShutdownException(Throwable ex) shared {}
     }
 
-    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        4,
+        new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared ExceptionThrower();
     auto processor = BatchEventProcessor!StubEvent.newInstance(rb, barrier, handler, 16);
@@ -421,7 +431,12 @@ unittest
         }
     }
 
-    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 16, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        16,
+        new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared BatchLimitRecordingHandler();
     auto processor = BatchEventProcessor!StubEvent.newInstance(rb, barrier, handler, MAX_BATCH_SIZE);
@@ -468,7 +483,12 @@ unittest
         }
     }
 
-    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        4,
+        new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared RewindingHandler();
     auto processor = BatchEventProcessor!StubEvent.newInstance(cast(shared DataProvider!StubEvent)rb,
@@ -501,7 +521,12 @@ unittest
         override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared {}
     }
 
-    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        4,
+        new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared DummyHandler();
     auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
@@ -535,7 +560,12 @@ unittest
         }
     }
 
-    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    import disruptor.eventfactory : makeEventFactory;
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(
+        makeEventFactory!StubEvent(() => new shared StubEvent()),
+        4,
+        new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared CountingHandler();
     auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
