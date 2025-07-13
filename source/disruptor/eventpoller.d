@@ -8,7 +8,7 @@ import disruptor.fixedsequencegroup : FixedSequenceGroup;
 interface Handler(T)
 {
     /// Called for each event to consume it.
-    bool onEvent(T event, long sequence, bool endOfBatch);
+    bool onEvent(shared(T) event, long sequence, bool endOfBatch);
 }
 
 /// Indicates the result of a poll operation.
@@ -71,7 +71,7 @@ public:
                 do
                 {
                     auto event = dataProvider.get(nextSequence);
-                    processNextEvent = eventHandler.onEvent(cast(T)event,
+                    processNextEvent = eventHandler.onEvent(event,
                         nextSequence,
                         nextSequence == availableSequence);
                     processedSequence = nextSequence;
@@ -137,7 +137,7 @@ unittest
         auto sequencer = new shared SingleProducerSequencer(16, new shared BusySpinWaitStrategy());
         class TestHandler : Handler!Object
         {
-            override bool onEvent(Object event, long seq, bool endOfBatch)
+            override bool onEvent(shared(Object) event, long seq, bool endOfBatch)
             {
                 return false;
             }
@@ -174,9 +174,9 @@ unittest
         byte[][] events;
         class ByteHandler : Handler!(byte[])
         {
-            override bool onEvent(byte[] evt, long seq, bool endOfBatch)
+            override bool onEvent(shared(byte[]) evt, long seq, bool endOfBatch)
             {
-                events ~= evt.dup;
+                events ~= (cast(byte[])evt).dup;
                 return !endOfBatch;
             }
         }
