@@ -162,3 +162,35 @@ unittest
     }
 }
 
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+
+    enum int size = 8;
+    shared SingleProducerSequencer seq =
+        new shared SingleProducerSequencer(size, new shared BlockingWaitStrategy());
+
+    auto s = seq.next();
+    assert(!seq.isAvailable(s));
+    seq.publish(s);
+    assert(seq.isAvailable(s));
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+
+    enum int size = 8;
+    shared SingleProducerSequencer seq =
+        new shared SingleProducerSequencer(size, new shared BlockingWaitStrategy());
+
+    auto s = seq.next();
+    seq.publish(s);
+    assert(seq.isAvailable(s));
+
+    foreach (i; 0 .. size)
+        seq.publish(seq.next());
+
+    assert(!seq.isAvailable(s));
+}
+

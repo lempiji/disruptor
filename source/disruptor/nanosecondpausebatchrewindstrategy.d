@@ -16,7 +16,7 @@ class NanosecondPauseBatchRewindStrategy : BatchRewindStrategy
         _nanoSecondPauseTime = nanoSecondPauseTime;
     }
 
-    override RewindAction handleRewindException(RewindableException e, int attempts) shared @safe nothrow
+    override RewindAction handleRewindException(RewindableException e, int attempts) shared @trusted nothrow
     {
         Thread.sleep(nsecs(_nanoSecondPauseTime));
         return RewindAction.REWIND;
