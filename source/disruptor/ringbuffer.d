@@ -5,6 +5,7 @@ import disruptor.abstractsequencer : AbstractSequencer;
 import disruptor.sequence : Sequence;
 import disruptor.singleproducersequencer : SingleProducerSequencer;
 import disruptor.multiproducersequencer : MultiProducerSequencer;
+import disruptor.producertype : ProducerType;
 import disruptor.waitstrategy : WaitStrategy, BlockingWaitStrategy;
 import disruptor.insufficientcapacityexception : InsufficientCapacityException;
 import disruptor.eventsink : EventSink;
@@ -71,6 +72,19 @@ public:
     {
         auto seq = new shared MultiProducerSequencer(bufferSize, waitStrategy);
         return new shared RingBuffer!T(factory, bufferSize, seq);
+    }
+
+    /// Create a ring buffer with the given producer type.
+    static shared(RingBuffer!T) create(ProducerType producerType, EventFactory!T factory, int bufferSize, shared WaitStrategy waitStrategy)
+    {
+        final switch (producerType)
+        {
+        case ProducerType.SINGLE:
+            return createSingleProducer(factory, bufferSize, waitStrategy);
+        case ProducerType.MULTI:
+            return createMultiProducer(factory, bufferSize, waitStrategy);
+        }
+        throw new Exception(producerType.to!string);
     }
 
     override shared(T) get(long sequence) shared nothrow
@@ -693,6 +707,32 @@ unittest
         assert(rb2.get(i).value == i + 29);
 
     assert(!rb2.tryPublishEvent(t));
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+    import disruptor.producertype : ProducerType;
+
+    class StubEvent
+    {
+        long value;
+    }
+
+    auto factory = () => new shared StubEvent();
+    auto ws = new shared BlockingWaitStrategy();
+
+    auto single = RingBuffer!StubEvent.create(ProducerType.SINGLE, factory, 4, ws);
+    auto seq = single.next();
+    (cast(StubEvent)single.get(seq)).value = 3;
+    single.publish(seq);
+    assert(single.get(seq).value == 3);
+
+    auto multi = RingBuffer!StubEvent.create(ProducerType.MULTI, factory, 8, ws);
+    seq = multi.next();
+    (cast(StubEvent)multi.get(seq)).value = 5;
+    multi.publish(seq);
+    assert(multi.get(seq).value == 5);
 }
 
 unittest
