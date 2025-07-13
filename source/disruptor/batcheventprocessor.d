@@ -15,6 +15,7 @@ import disruptor.simplebatchrewindstrategy : SimpleBatchRewindStrategy;
 import disruptor.rewindaction : RewindAction;
 import disruptor.rewindableeventhandler : RewindableEventHandler;
 import disruptor.eventhandler : EventHandler, EventHandlerBase;
+import disruptor.exceptionhandlers : ExceptionHandlers;
 
 /// Callback handler for uncaught exceptions in the event loop.
 interface ExceptionHandler(T)
@@ -68,7 +69,7 @@ public:
         this._sequenceBarrier = sequenceBarrier;
         this._eventHandler = eventHandler;
         this._sequence = new shared Sequence(Sequence.INITIAL_VALUE);
-        this._exceptionHandler = new shared IgnoreExceptionHandler!T();
+        this._exceptionHandler = null;
         if (maxBatchSize < 1)
             throw new Exception("maxBatchSize must be greater than 0", __FILE__, __LINE__);
         this._batchLimitOffset = maxBatchSize - 1;
@@ -94,7 +95,7 @@ public:
         this._sequenceBarrier = sequenceBarrier;
         this._eventHandler = eventHandler;
         this._sequence = new shared Sequence(Sequence.INITIAL_VALUE);
-        this._exceptionHandler = new shared IgnoreExceptionHandler!T();
+        this._exceptionHandler = null;
         if (maxBatchSize < 1)
             throw new Exception("maxBatchSize must be greater than 0", __FILE__, __LINE__);
         this._batchLimitOffset = maxBatchSize - 1;
@@ -256,17 +257,23 @@ private:
 
     void handleEventException(Throwable ex, long sequence, shared(T) event) shared
     {
-        _exceptionHandler.handleEventException(ex, sequence, event);
+        getExceptionHandler().handleEventException(ex, sequence, event);
     }
 
     void handleOnStartException(Throwable ex) shared
     {
-        _exceptionHandler.handleOnStartException(ex);
+        getExceptionHandler().handleOnStartException(ex);
     }
 
     void handleOnShutdownException(Throwable ex) shared
     {
-        _exceptionHandler.handleOnShutdownException(ex);
+        getExceptionHandler().handleOnShutdownException(ex);
+    }
+
+    shared(ExceptionHandler!T) getExceptionHandler() shared
+    {
+        auto handler = _exceptionHandler;
+        return handler is null ? ExceptionHandlers.defaultHandler!T() : handler;
     }
 
     static class TryRewindHandler : RewindHandler
