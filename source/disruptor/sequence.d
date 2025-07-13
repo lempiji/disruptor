@@ -1,6 +1,6 @@
 module disruptor.sequence;
 
-import core.atomic : MemoryOrder, atomicLoad, atomicStore, atomicOp, cas;
+import core.atomic : MemoryOrder, atomicLoad, atomicStore, atomicOp, cas, atomicFence;
 import std.conv : to;
 
 /// Concurrent sequence class similar to the Java version.
@@ -33,7 +33,9 @@ public:
 
     void setVolatile(long v) shared @nogc nothrow @safe
     {
-        atomicStore!()( _value, v );
+        atomicFence!(MemoryOrder.rel)();
+        atomicStore!(MemoryOrder.raw)(_value, v);
+        atomicFence();
     }
 
     bool compareAndSet(long expectedValue, long newValue) shared @nogc nothrow @safe
@@ -74,4 +76,21 @@ unittest
     assert(seq.compareAndSet(Sequence.INITIAL_VALUE + 8, 3));
     assert(seq.get == 3);
     assert(!seq.compareAndSet(0, 1));
+}
+
+unittest
+{
+    import core.thread : Thread;
+    import core.time : msecs;
+
+    auto seq = new shared Sequence();
+    auto reader = new Thread({
+        while (seq.get != 1)
+            Thread.yield();
+    });
+    reader.start();
+    Thread.sleep(50.msecs);
+    seq.setVolatile(1);
+    reader.join();
+    assert(seq.get == 1);
 }
