@@ -32,6 +32,7 @@ public import disruptor.sleepingwaitstrategy;
 public import disruptor.yieldingwaitstrategy;
 public import disruptor.timeoutexception;
 public import disruptor.eventhandler;
+public import disruptor.aggregateeventhandler;
 public import disruptor.rewindableeventhandler;
 public import disruptor.rewindableexception;
 public import disruptor.rewindaction;
