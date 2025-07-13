@@ -9,7 +9,9 @@ import disruptor.sequencer : Sequencer, SequenceBarrier, DataProvider, EventPoll
 /// Exception thrown when a SequenceBarrier is alerted.
 class AlertException : Exception
 {
-    this(string msg = "Alerted", string file = __FILE__, size_t line = __LINE__)
+    static immutable(AlertException) INSTANCE = new immutable AlertException();
+
+    this(string msg = "Alerted", string file = __FILE__, size_t line = __LINE__) immutable
     {
         super(msg, file, line);
     }
@@ -101,7 +103,7 @@ public:
     {
         if (atomicLoad!(MemoryOrder.acq)(_alerted))
         {
-            throw new AlertException();
+            throw cast(AlertException) AlertException.INSTANCE;
         }
     }
 }
