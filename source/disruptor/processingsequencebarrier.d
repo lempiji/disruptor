@@ -5,15 +5,7 @@ import disruptor.sequence : Sequence;
 import disruptor.fixedsequencegroup : FixedSequenceGroup;
 import disruptor.waitstrategy : WaitStrategy;
 import disruptor.sequencer : Sequencer, SequenceBarrier, DataProvider, EventPoller;
-
-/// Exception thrown when a SequenceBarrier is alerted.
-class AlertException : Exception
-{
-    this(string msg = "Alerted", string file = __FILE__, size_t line = __LINE__)
-    {
-        super(msg, file, line);
-    }
-}
+import disruptor.alertexception : AlertException;
 
 /// Coordination barrier for tracking a cursor and dependent sequences.
 class ProcessingSequenceBarrier : SequenceBarrier
@@ -101,7 +93,7 @@ public:
     {
         if (atomicLoad!(MemoryOrder.acq)(_alerted))
         {
-            throw new AlertException();
+            throw AlertException.INSTANCE;
         }
     }
 }
