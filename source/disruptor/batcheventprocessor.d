@@ -63,32 +63,6 @@ public:
          shared SequenceBarrier sequenceBarrier,
          shared EventHandlerBase!T eventHandler,
          int maxBatchSize,
-         shared BatchRewindStrategy rewindStrategy = null)
-    {
-        this._dataProvider = dataProvider;
-        this._sequenceBarrier = sequenceBarrier;
-        this._eventHandler = eventHandler;
-        this._sequence = new shared Sequence(Sequence.INITIAL_VALUE);
-        this._exceptionHandler = null;
-        if (maxBatchSize < 1)
-            throw new Exception("maxBatchSize must be greater than 0", __FILE__, __LINE__);
-        this._batchLimitOffset = maxBatchSize - 1;
-        if (cast(RewindableEventHandler!T)eventHandler !is null)
-        {
-            if (rewindStrategy is null)
-                rewindStrategy = new shared SimpleBatchRewindStrategy();
-            this._rewindHandler = new shared TryRewindHandler(cast(shared) this, rewindStrategy);
-        }
-        else
-        {
-            this._rewindHandler = new shared NoRewindHandler();
-        }
-    }
-
-    this(shared DataProvider!T dataProvider,
-         shared SequenceBarrier sequenceBarrier,
-         shared EventHandlerBase!T eventHandler,
-         int maxBatchSize,
          shared BatchRewindStrategy rewindStrategy = null) shared
     {
         this._dataProvider = dataProvider;
@@ -109,6 +83,20 @@ public:
         {
             this._rewindHandler = new shared NoRewindHandler();
         }
+    }
+
+    /// Create a new shared BatchEventProcessor instance.
+    static shared(BatchEventProcessor!T) newInstance(shared DataProvider!T dataProvider,
+                                                    shared SequenceBarrier sequenceBarrier,
+                                                    shared EventHandlerBase!T eventHandler,
+                                                    int maxBatchSize,
+                                                    shared BatchRewindStrategy rewindStrategy = null)
+    {
+        return new shared BatchEventProcessor!T(dataProvider,
+                                                sequenceBarrier,
+                                                eventHandler,
+                                                maxBatchSize,
+                                                rewindStrategy);
     }
 
     override shared(Sequence) getSequence() shared
@@ -333,7 +321,7 @@ unittest
     auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared CountingHandler();
-    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
+    auto processor = BatchEventProcessor!StubEvent.newInstance(rb, barrier, handler, 16);
     rb.addGatingSequences(processor.getSequence());
 
     // publish events
@@ -380,7 +368,7 @@ unittest
     auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared ExceptionThrower();
-    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
+    auto processor = BatchEventProcessor!StubEvent.newInstance(rb, barrier, handler, 16);
     auto exc = new shared LatchExceptionHandler();
     processor.setExceptionHandler(exc);
     rb.addGatingSequences(processor.getSequence());
@@ -432,7 +420,7 @@ unittest
     auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 16, new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new BatchLimitRecordingHandler();
-    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, cast(shared)handler, MAX_BATCH_SIZE);
+    auto processor = BatchEventProcessor!StubEvent.newInstance(rb, barrier, cast(shared)handler, MAX_BATCH_SIZE);
     rb.addGatingSequences(processor.getSequence());
 
     // publish events
@@ -477,7 +465,11 @@ unittest
     auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
     auto barrier = rb.newBarrier();
     auto handler = new shared RewindingHandler();
-    auto processor = new shared BatchEventProcessor!StubEvent(cast(shared DataProvider!StubEvent)rb, barrier, cast(shared)handler, 16, new shared SimpleBatchRewindStrategy());
+    auto processor = BatchEventProcessor!StubEvent.newInstance(cast(shared DataProvider!StubEvent)rb,
+                                                               barrier,
+                                                               cast(shared)handler,
+                                                               16,
+                                                               new shared SimpleBatchRewindStrategy());
     handler.processor = processor;
     rb.addGatingSequences(processor.getSequence());
     rb.publish(rb.next());
