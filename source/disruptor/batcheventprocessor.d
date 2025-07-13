@@ -140,8 +140,11 @@ public:
         int expected = RunningState.IDLE;
         if (!cas(&_running, expected, RunningState.RUNNING))
         {
-            if (expected == RunningState.RUNNING)
+            auto state = atomicLoad!(MemoryOrder.acq)(_running);
+            if (state == RunningState.RUNNING)
                 throw new Exception("Thread is already running", __FILE__, __LINE__);
+            else if (state == RunningState.HALTED)
+                return;
             else
             {
                 notifyStart();
@@ -484,4 +487,65 @@ unittest
     t.join();
 
     assert(handler.calls == 2);
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+    import core.thread : Thread;
+    import core.time : msecs;
+
+    class StubEvent { int value; }
+
+    class DummyHandler : EventHandlerBase!StubEvent
+    {
+        override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared {}
+    }
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    auto barrier = rb.newBarrier();
+    auto handler = new shared DummyHandler();
+    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
+    rb.addGatingSequences(processor.getSequence());
+    rb.publish(rb.next());
+
+    auto t = new Thread({ processor.run(); });
+    t.start();
+    Thread.sleep(50.msecs);
+    bool threw = false;
+    try { processor.run(); } catch (Exception) { threw = true; }
+    assert(threw);
+    processor.halt();
+    t.join();
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+
+    class StubEvent { int value; }
+
+    class CountingHandler : EventHandlerBase!StubEvent
+    {
+        shared int count;
+        override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
+        {
+            import core.atomic : atomicOp;
+            atomicOp!"+="(count, 1);
+        }
+    }
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    auto barrier = rb.newBarrier();
+    auto handler = new shared CountingHandler();
+    auto processor = new shared BatchEventProcessor!StubEvent(rb, barrier, handler, 16);
+    rb.addGatingSequences(processor.getSequence());
+
+    processor.halt();
+    rb.publish(rb.next());
+
+    processor.run();
+
+    assert(handler.count == 0);
+    assert(processor.getSequence().get == Sequence.INITIAL_VALUE);
 }
