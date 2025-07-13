@@ -1,6 +1,6 @@
 module disruptor.batcheventprocessor;
 
-import core.atomic : MemoryOrder, atomicLoad, atomicStore, cas;
+import core.atomic : MemoryOrder, atomicLoad, atomicStore, cas, atomicOp;
 import std.algorithm : min;
 import disruptor.sequence : Sequence;
 import disruptor.sequencer : DataProvider, SequenceBarrier;
@@ -8,24 +8,13 @@ import disruptor.eventprocessor : EventProcessor;
 import disruptor.timeoutexception : TimeoutException;
 import disruptor.processingsequencebarrier : AlertException;
 import disruptor.ringbuffer : RingBuffer; // for unittests
-
-/// Callback interface for processing events from the RingBuffer.
-interface EventHandler(T)
-{
-    void onEvent(shared(T) event, long sequence, bool endOfBatch) shared;
-    void onBatchStart(long batchSize, long queueDepth) shared;
-    void onStart() shared;
-    void onShutdown() shared;
-    void onTimeout(long sequence) shared;
-}
-
-abstract class EventHandlerBase(T) : EventHandler!T
-{
-    override void onBatchStart(long batchSize, long queueDepth) shared {}
-    override void onStart() shared {}
-    override void onShutdown() shared {}
-    override void onTimeout(long sequence) shared {}
-}
+import disruptor.rewindableexception : RewindableException;
+import disruptor.rewindhandler : RewindHandler;
+import disruptor.batchrewindstrategy : BatchRewindStrategy;
+import disruptor.simplebatchrewindstrategy : SimpleBatchRewindStrategy;
+import disruptor.rewindaction : RewindAction;
+import disruptor.rewindableeventhandler : RewindableEventHandler;
+import disruptor.eventhandler : EventHandler, EventHandlerBase;
 
 /// Callback handler for uncaught exceptions in the event loop.
 interface ExceptionHandler(T)
@@ -60,17 +49,20 @@ class BatchEventProcessor(T) : EventProcessor
 private:
     shared(DataProvider!T) _dataProvider;
     shared SequenceBarrier _sequenceBarrier;
-    shared(EventHandler!T) _eventHandler;
+    shared(EventHandlerBase!T) _eventHandler;
     shared Sequence _sequence;
     shared(ExceptionHandler!T) _exceptionHandler;
     shared int _running = RunningState.IDLE;
     shared int _batchLimitOffset;
+    shared(RewindHandler) _rewindHandler;
+    shared int _retriesAttempted = 0;
 
 public:
     this(shared DataProvider!T dataProvider,
          shared SequenceBarrier sequenceBarrier,
-         shared EventHandler!T eventHandler,
-         int maxBatchSize)
+         shared EventHandlerBase!T eventHandler,
+         int maxBatchSize,
+         shared BatchRewindStrategy rewindStrategy = null)
     {
         this._dataProvider = dataProvider;
         this._sequenceBarrier = sequenceBarrier;
@@ -80,12 +72,23 @@ public:
         if (maxBatchSize < 1)
             throw new Exception("maxBatchSize must be greater than 0", __FILE__, __LINE__);
         this._batchLimitOffset = maxBatchSize - 1;
+        if (cast(RewindableEventHandler!T)eventHandler !is null)
+        {
+            if (rewindStrategy is null)
+                rewindStrategy = new shared SimpleBatchRewindStrategy();
+            this._rewindHandler = new shared TryRewindHandler(cast(shared) this, rewindStrategy);
+        }
+        else
+        {
+            this._rewindHandler = new shared NoRewindHandler();
+        }
     }
 
     this(shared DataProvider!T dataProvider,
          shared SequenceBarrier sequenceBarrier,
-         shared EventHandler!T eventHandler,
-         int maxBatchSize) shared
+         shared EventHandlerBase!T eventHandler,
+         int maxBatchSize,
+         shared BatchRewindStrategy rewindStrategy = null) shared
     {
         this._dataProvider = dataProvider;
         this._sequenceBarrier = sequenceBarrier;
@@ -95,6 +98,16 @@ public:
         if (maxBatchSize < 1)
             throw new Exception("maxBatchSize must be greater than 0", __FILE__, __LINE__);
         this._batchLimitOffset = maxBatchSize - 1;
+        if (cast(RewindableEventHandler!T)eventHandler !is null)
+        {
+            if (rewindStrategy is null)
+                rewindStrategy = new shared SimpleBatchRewindStrategy();
+            this._rewindHandler = new shared TryRewindHandler(this, rewindStrategy);
+        }
+        else
+        {
+            this._rewindHandler = new shared NoRewindHandler();
+        }
     }
 
     override shared(Sequence) getSequence() shared
@@ -158,25 +171,34 @@ private:
 
         while (true)
         {
+            long startOfBatchSequence = nextSequence;
             try
             {
-                long availableSequence = _sequenceBarrier.waitFor(nextSequence);
-                long endOfBatchSequence = min(nextSequence + _batchLimitOffset, availableSequence);
-
-                if (nextSequence <= endOfBatchSequence)
+                try
                 {
-                    _eventHandler.onBatchStart(endOfBatchSequence - nextSequence + 1,
+                    long availableSequence = _sequenceBarrier.waitFor(nextSequence);
+                    long endOfBatchSequence = min(nextSequence + _batchLimitOffset, availableSequence);
+
+                    if (nextSequence <= endOfBatchSequence)
+                    {
+                        _eventHandler.onBatchStart(endOfBatchSequence - nextSequence + 1,
                                               availableSequence - nextSequence + 1);
-                }
+                    }
 
-                while (nextSequence <= endOfBatchSequence)
+                    while (nextSequence <= endOfBatchSequence)
+                    {
+                        event = _dataProvider.get(nextSequence);
+                        _eventHandler.onEvent(cast(T)event, nextSequence, nextSequence == endOfBatchSequence);
+                        nextSequence++;
+                    }
+
+                    _retriesAttempted = 0;
+                    _sequence.set(endOfBatchSequence);
+                }
+                catch (RewindableException e)
                 {
-                    event = _dataProvider.get(nextSequence);
-                    _eventHandler.onEvent(event, nextSequence, nextSequence == endOfBatchSequence);
-                    nextSequence++;
+                    nextSequence = _rewindHandler.attemptRewindGetNextSequence(e, startOfBatchSequence);
                 }
-
-                _sequence.set(endOfBatchSequence);
             }
             catch (TimeoutException)
             {
@@ -246,6 +268,38 @@ private:
     {
         _exceptionHandler.handleOnShutdownException(ex);
     }
+
+    static class TryRewindHandler : RewindHandler
+    {
+        shared BatchEventProcessor!T _outer;
+        shared BatchRewindStrategy _strategy;
+        this(shared BatchEventProcessor!T outer, shared BatchRewindStrategy strategy) shared
+        {
+            _outer = outer;
+            _strategy = strategy;
+        }
+
+        override long attemptRewindGetNextSequence(RewindableException e, long startOfBatchSequence) shared
+        {
+            if (_strategy.handleRewindException(e, atomicOp!"+="(_outer._retriesAttempted, 1)) == RewindAction.REWIND)
+            {
+                return startOfBatchSequence;
+            }
+            else
+            {
+                _outer._retriesAttempted = 0;
+                throw e;
+            }
+        }
+    }
+
+    static class NoRewindHandler : RewindHandler
+    {
+        override long attemptRewindGetNextSequence(RewindableException e, long startOfBatchSequence) shared
+        {
+            throw new Exception("Rewindable Exception thrown from a non-rewindable event handler", __FILE__, __LINE__, e);
+        }
+    }
 }
 
 unittest
@@ -259,7 +313,7 @@ unittest
     class CountingHandler : EventHandlerBase!StubEvent
     {
         shared int count;
-        override void onEvent(shared(StubEvent) evt, long seq, bool endOfBatch) shared
+        override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
         {
             import core.atomic : atomicOp;
             atomicOp!"+="(count, 1);
@@ -295,7 +349,7 @@ unittest
 
     class ExceptionThrower : EventHandlerBase!StubEvent
     {
-        override void onEvent(shared(StubEvent) evt, long seq, bool endOfBatch) shared
+        override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
         {
             throw new Exception("boom");
         }
@@ -347,7 +401,7 @@ unittest
         long[] announcedQueueDepths;
         long[] current;
 
-        override void onEvent(shared(StubEvent) evt, long seq, bool endOfBatch) shared
+        override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
         {
             current ~= seq;
             if (endOfBatch)
@@ -386,4 +440,41 @@ unittest
     assert(handler.batchedSequences[1] == [3L, 4L]);
     assert(handler.announcedBatchSizes == [3L, 2L]);
     assert(handler.announcedQueueDepths == [5L, 2L]);
+}
+
+unittest
+{
+    import disruptor.blockingwaitstrategy : BlockingWaitStrategy;
+    import core.thread : Thread;
+    import core.time : msecs;
+
+    class StubEvent { int value; }
+
+    class RewindingHandler : RewindableEventHandler!StubEvent
+    {
+        shared BatchEventProcessor!StubEvent processor;
+        shared int calls;
+
+        override void onEvent(StubEvent evt, long seq, bool endOfBatch) shared
+        {
+            import core.atomic : atomicOp;
+            if (atomicOp!"+="(calls, 1) == 1)
+                throw new RewindableException();
+            processor.halt();
+        }
+    }
+
+    auto rb = RingBuffer!StubEvent.createSingleProducer(() => new shared StubEvent(), 4, new shared BlockingWaitStrategy());
+    auto barrier = rb.newBarrier();
+    auto handler = new shared RewindingHandler();
+    auto processor = new shared BatchEventProcessor!StubEvent(cast(shared DataProvider!StubEvent)rb, barrier, cast(shared)handler, 16, new shared SimpleBatchRewindStrategy());
+    handler.processor = processor;
+    rb.addGatingSequences(processor.getSequence());
+    rb.publish(rb.next());
+
+    auto t = new Thread({ processor.run(); });
+    t.start();
+    t.join();
+
+    assert(handler.calls == 2);
 }
