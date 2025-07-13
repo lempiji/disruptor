@@ -78,12 +78,12 @@ unittest
 
     class DummySequenceBarrier : SequenceBarrier
     {
-        override long waitFor(long sequence) shared { return 0; }
-        override long getCursor() shared { return 0; }
-        override bool isAlerted() shared { return false; }
-        override void alert() shared {}
-        override void clearAlert() shared {}
-        override void checkAlert() shared {}
+        override long waitFor(long sequence) shared @safe nothrow { return 0; }
+        override long getCursor() shared @safe nothrow { return 0; }
+        override bool isAlerted() shared @safe nothrow { return false; }
+        override void alert() shared @safe nothrow {}
+        override void clearAlert() shared @safe nothrow {}
+        override void checkAlert() shared @safe nothrow {}
     }
 
     enum theTimeout = 50; // milliseconds

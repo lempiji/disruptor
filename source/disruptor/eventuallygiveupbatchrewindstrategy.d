@@ -9,12 +9,12 @@ class EventuallyGiveUpBatchRewindStrategy : BatchRewindStrategy
 {
     private long _maxAttempts;
 
-    this(long maxAttempts) shared
+    this(long maxAttempts) shared @safe nothrow
     {
         _maxAttempts = maxAttempts;
     }
 
-    override RewindAction handleRewindException(RewindableException e, int attempts) shared
+    override RewindAction handleRewindException(RewindableException e, int attempts) shared @safe nothrow
     {
         if (attempts == _maxAttempts)
         {

@@ -6,6 +6,6 @@ import disruptor.rewindableexception : RewindableException;
 /// Strategy invoked when a RewindableException occurs during batch processing.
 interface BatchRewindStrategy
 {
-    RewindAction handleRewindException(RewindableException e, int attempts) shared;
+    RewindAction handleRewindException(RewindableException e, int attempts) shared @safe nothrow;
 }
 
