@@ -1,8 +1,11 @@
 module disruptor.waitstrategy;
 public import disruptor.blockingwaitstrategy;
+public import disruptor.liteblockingwaitstrategy;
 public import disruptor.sleepingwaitstrategy;
+public import disruptor.litetimeoutblockingwaitstrategy;
 public import disruptor.yieldingwaitstrategy;
 public import disruptor.timeoutblockingwaitstrategy;
+public import disruptor.phasedbackoffwaitstrategy;
 
 import core.atomic : pause; // for spin loop
 import disruptor.sequence;
